@@ -53,7 +53,10 @@ def get_layout_subjs():
     return layout, subjs
 
 def get_method_ts(xcp_subdir, subj):
-    sub_ts = np.genfromtxt(xcp_subdir / f"sub-{subj}" / f"ses-{REL_SES}" / "func" / f"sub-{subj}_ses-{REL_SES}_task-rest_run-1_space-MNI152NLin2009cAsym_atlas-Schaefer217_timeseries.tsv", delimiter='\t')
+    try:
+        sub_ts = np.genfromtxt(xcp_subdir / f"sub-{subj}" / f"ses-{REL_SES}" / "func" / f"sub-{subj}_ses-{REL_SES}_task-rest_run-1_space-MNI152NLin2009cAsym_atlas-Schaefer217_timeseries.tsv", delimiter='\t')
+    except:
+        sub_ts = np.genfromtxt(xcp_subdir / f"sub-{subj}" / f"ses-{REL_SES}" / "func" / f"sub-{subj}_ses-{REL_SES}_task-rest_space-MNI152NLin2009cAsym_atlas-Schaefer217_timeseries.tsv", delimiter='\t')
     sub_ts = sub_ts[4:]
     sub_ts_t = sub_ts.T 
     return sub_ts_t

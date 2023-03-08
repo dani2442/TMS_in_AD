@@ -74,6 +74,7 @@ warmUpFactor = 10.0
 #%% ~~ Load data ~~ %%#
 # Set file path for SC matrix
 sc = get_sc()
+sc[sc < 0] = 0
 # Prevent full synchronization of the model
 SCnorm = sc * 0.2 / sc.max()
 print("SCnorm.shape={}".format(SCnorm.shape))
