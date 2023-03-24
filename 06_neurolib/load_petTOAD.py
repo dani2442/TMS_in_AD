@@ -15,7 +15,9 @@ Sources:
 #%% ~~ Imports and directories ~~ %%#
 # Import needed packages
 import numpy as np
-import pandas as pd
+import scipy.io as sio
+import WholeBrain.Utils.filteredPowerSpectralDensity as filtPowSpectr
+import WholeBrain.BOLDFilters as BOLDfilters
 from pathlib import Path
 from bids import BIDSLayout
 
@@ -72,6 +74,26 @@ def get_all_ts(subjs):
     return ts_dict
 
 def get_sc():
-    sc = pd.read_csv(UTL_DIR / "sc_enigma.csv", header=None)
-    sc_numpy = sc.to_numpy()
+    # sc = pd.read_csv(UTL_DIR / "sc_enigma.csv", header=None)
+    # sc_numpy = sc.to_numpy()
+    sc = sio.loadmat(UTL_DIR / "Schaefer2018_200Parcels_17Networks" / "sc.mat")
+    sc_numpy = sc['mat_zero']
     return sc_numpy
+
+
+def get_frequencies(all_fMRI, flp, fhi, TR):
+    BOLDfilters.flp = flp
+    BOLDfilters.fhi = fhi
+    BOLDfilters.TR = TR
+    # Data is already filtered
+    timeseries_4freq = np.array([v for k, v in all_fMRI.items()])
+    # Get the phase difference using WholeBrain implementation
+    f_diff = filtPowSpectr.filtPowSpetraMultipleSubjects(
+        timeseries_4freq, TR=3.0
+    )  # should be baseline_group_ts .. or baseling_group[0].reshape((1,52,193))
+    f_diff[np.where(f_diff == 0)] = np.mean(
+        f_diff[np.where(f_diff != 0)]
+    )  # f_diff(find(f_diff==0))=mean(f_diff(find(f_diff~=0)))
+    w_s = 2 * np.pi * f_diff
+    return w_s
+

@@ -50,13 +50,15 @@ def calculate_WMH_load(subj):
     return wmh_volume
 
 # Get the BIDS layout and subject list
+print('Loading the folder layout')
 layout = BIDSLayout(WMH_DIR, validate=False, config=["bids", "derivatives"])
 subjs = layout.get_subjects()
 
 # iterate through subjects, since not all subjects have WMH masks, perform WMH volume extraction only on those who have the WMH segmentation masks
 global_WMH_dict = {}
 
-for subj in subjs:
+for i, subj in enumerate(subjs):
+    print(f'Processing sub-{subj}... ({i+1}/{len(subjs)})')
     global_WMH_dict[subj] = calculate_WMH_load(subj)
 
 WMH_subjs_list = []
@@ -66,9 +68,10 @@ for k, v in global_WMH_dict.items():
     WMH_subjs_list.append(k)
     WMH_burden_list.append(v)
 
-    WMH_burden_arr = np.array(WMH_burden_list)
+WMH_burden_arr = np.array(WMH_burden_list)
 
 # Normalize the whole group in [0,1]
+print('Normalizing the WMH burden across all subjects...')
 normalized_WMH_burden_series = np.round(
     (WMH_burden_arr - np.min(WMH_burden_arr)) / np.ptp(WMH_burden_arr), 5
 )  
@@ -78,6 +81,7 @@ global_WMH_dict_normalized = {
 }
 
 # Save global WMH load dict, first open file for writing, "w"
+print(f'Saving dictionaries in {WMH_RES_DIR}...')
 g = open(WMH_RES_DIR / "global_WMH_burden_all_subjs.pkl", "wb")
 # write json object to file
 pickle.dump(global_WMH_dict, g)

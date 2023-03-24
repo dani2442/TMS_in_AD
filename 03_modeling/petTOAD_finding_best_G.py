@@ -1,3 +1,17 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""     Find the best G coupling parameter based on healthy controls -- Version 1.0
+Last edit:  2023/03/20
+Authors:    Leone, Riccardo (RL)
+Notes:      - Script for finding the best G on HC
+            - Release notes:
+                * Initial release
+To do:      - 
+Comments: 
+
+Sources:  Gustavo Patow's WholeBrain Code (https://github.com/dagush/WholeBrain) 
+"""
+
 #%% Hopf code: Pre-processing (finding G)
 #  -------------------------------------------------------------------------------------
 from petTOAD_setup import *

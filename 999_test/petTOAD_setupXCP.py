@@ -1,23 +1,10 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-"""     Evaluate different preprocessing strategies on modeling -- Version 1
-Last edit:  2023/03/03
-Authors:    Leone, Riccardo (RL)
-Notes:      - Data loader file to evaluate the impact of preprocessing on modeling
-            - Release notes:
-                * Initial release
-To do:      - 
-Comments:   
-
-Sources:  Gustavo Patow's WholeBrain Code (https://github.com/dagush/WholeBrain) 
-"""
 #%%
-# Import the needed packages
+# Setup for the code for Hopf simulations
 # ==========================================================================
 # ==========================================================================
 import numpy as np
 import sys
-from petTOAD_load import *
+from petTOAD_loadXCP import *
 
 # --------------------------------------------------------------------------
 #%%
@@ -58,7 +45,7 @@ ParmSeep.verbose = True
 import WholeBrain.Utils.filteredPowerSpectralDensity as filtPowSpectr
 import WholeBrain.BOLDFilters as BOLDFilters
 
-# NARROW LOW BANDPASS just for filtering the intrinsic frequencies
+# NARROW LOW BANDPASS
 BOLDFilters.flp = 0.04  # lowpass frequency of filter
 BOLDFilters.fhi = 0.07  # highpass
 BOLDFilters.TR = 3.0
@@ -90,16 +77,14 @@ def checking_timeseries(all_fMRI):
 
 
 #%% Load SCs, timelines and group classifications
-sc = get_sc_enigma()
+sc = get_sc()
 # Prevent full synchronization of the model
 sc_norm = sc * 0.2 / sc.max()
 # Subject names and timeseries dictionary
 _, subjs = get_layout_subjs()
-
-all_fMRI = {}
-for subj in subjs:
-    all_fMRI[subj] = get_method_ts(subj)
+ts_dict = get_all_ts(subjs)
 # Now we have different types of preprocessing with XCP_D, choose only one for trying out
+all_fMRI = ts_dict["24P"]
 all_fMRI = checking_timeseries(all_fMRI)
 HC, MCI, AD = get_classification(subjs)
 all_HC_fMRI = {k: v for k, v in all_fMRI.items() if k in HC}

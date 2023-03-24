@@ -63,8 +63,8 @@ import WholeBrain.BOLDFilters as BOLDfilters
 
 # These filters are applied in the filtPowSpectr function that we use to extract the intrinsic frequencies of each region.
 # They are also applied to process the FC and swFCD and phFCD, but you can set the corresponding parameter to False later on. 0.04-0.07 Hz common to extract intrinsic frequencies
-BOLDfilters.flp = 0.01
-BOLDfilters.fhi = 0.08
+BOLDfilters.flp = 0.04
+BOLDfilters.fhi = 0.07
 BOLDfilters.TR = 3.0
 
 # We want to warmup the timeseries before modeling
@@ -85,21 +85,6 @@ Hopf.setParms({"a": base_a_value})
 
 #%% ~~ Define useful functions ~~ %%#
 
-
-def computeSubjectSimulation():
-    # integrator.neuronalModel.SC = C
-    # integrator.initBookkeeping(N, Tmaxneuronal)
-    if warmUp:
-        currObsVars = integrator.warmUpAndSimulate(
-            dt, Tmaxneuronal, TWarmUp=Tmaxneuronal / warmUpFactor
-        )
-    else:
-        currObsVars = integrator.simulate(dt, Tmaxneuronal)
-    # currObsVars = integrator.returnBookkeeping()  # curr_xn, curr_rn
-    neuro_act = currObsVars[:, 1, :]  # curr_rn
-    return neuro_act
-
-
 def fittingPipeline_homogeneous(
     all_fMRI,
     distanceSettings,  # This is a dictionary of {name: (distance module, apply filters bool)}
@@ -114,7 +99,7 @@ def fittingPipeline_homogeneous(
         all_fMRI,
         gs,
         gParms,
-        NumSimSubjects=10,
+        NumSimSubjects=2,
         distanceSettings=distanceSettings,
         parmLabel="finding_best_G_",
         outFilePath=outFilePath,
@@ -140,7 +125,7 @@ conditionToStudy = "hc"
 mode = "homogeneous"  # homogeneous/heterogeneous
 
 # Data is already filtered
-distanceSettings = {"FC": (FC, False), "phFCD": (phFCD, False)}
+distanceSettings = {"FC": (FC, True), "phFCD": (phFCD, True)}
 
 def process_methi(methi):
     all_fMRI = ts_dict[methi]
@@ -174,7 +159,7 @@ def process_methi(methi):
 
     outFilePath = str(OUT_XCP_DIR) + f"/{methi}"
 
-    Gs = np.round(np.arange(0.5, 5, 0.05), 3)
+    Gs = np.round(np.arange(0.5, 5, 0.5), 3)
 
     best_parameters, fitting = fittingPipeline_homogeneous(
         all_fMRI=all_fMRI, distanceSettings=distanceSettings, gs=Gs, outFilePath=outFilePath
@@ -188,11 +173,11 @@ def process_methi(methi):
         print(
             f"# Optimal {ds} =     {optimValDist[0]} @ {np.round(parmPos, decimals=3)}"
         )
-    plt.savefig(outFilePath / "initial_exploration_plot.png")
+    plt.savefig(outFilePath + "/initial_exploration_plot.png")
 
 list_methods = [k for k, v in ts_dict.items()]
 
-
+#%%
 for methi in list_methods:
     process_methi(methi)
 # %%

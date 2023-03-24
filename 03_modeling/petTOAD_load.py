@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""     Find the best G coupling parameter based on healthy controls -- Version 1
-Last edit:  2023/03/03
+"""     Find the best G coupling parameter based on healthy controls -- Version 1.1
+Last edit:  2023/03/15
 Authors:    Leone, Riccardo (RL)
 Notes:      - Data loader file to evaluate the impact of preprocessing on modeling
             - Release notes:
-                * Initial release
+                * Current xcp_d implementation removes the first 4 timepoints already.
 To do:      - 
 Comments:   Current version is for AROMA
 
@@ -36,6 +36,8 @@ RES_DIR = SPINE / "results"
 if not Path.is_dir(RES_DIR):
     Path.mkdir(RES_DIR)
 
+LQT_DIR = RES_DIR / "LQT"
+
 if not Path.is_dir(AROMA_DIR):
     Path.mkdir(AROMA_DIR)
 
@@ -43,8 +45,10 @@ if not Path.is_dir(AROMA_DIR):
 OUT_DIR = RES_DIR / "Finding_best_G"
 #%% ~~ Load data ~~ %%#
 def get_layout_subjs():
+    print("Getting the layout...")
     layout = BIDSLayout(AROMA_DIR, validate=False, config=["bids", "derivatives"])
     subjs = layout.get_subjects()
+    print("Done with the layout...")
     return layout, subjs
 
 
@@ -67,8 +71,8 @@ def get_method_ts(subj):
             / f"sub-{subj}_ses-{REL_SES}_task-rest_space-MNI152NLin2009cAsym_atlas-Schaefer217_timeseries.tsv",
             delimiter="\t",
         )
-    # Drop the first 4 timepoints and transpose as Nxt timeseries
-    sub_ts = sub_ts[4:].T
+    # The first 4 timepoints are already dropped in my implementation of xcp_d AROMA, transpose as Nxt timeseries
+    sub_ts = sub_ts.T
     # Z-score the signal
     sub_ts_post = clean(sub_ts, detrend=False, standardize="zscore", filter=None)
     return sub_ts_post
@@ -106,3 +110,14 @@ def get_classification(subjs):
 
 
 # %%
+def get_sc_wmh_weighted(subj, sc_norm):
+    wmh_df = pd.read_csv(LQT_DIR / f"sub-{subj}" / "pct_spared_sc_matrix.csv")
+    wmh_df = wmh_df.iloc[:200, 1:201]
+    sc_wmh_weighted = sc_norm * wmh_df / 100.
+    return sc_wmh_weighted
+
+def get_node_damage(subj):
+    wmh_df = pd.read_csv(LQT_DIR / f"sub-{subj}" / "pct_sdc_matrix.csv")
+    # Computes the percent damage sustained by each node
+    wmh_damage = wmh_df.iloc[:200, 1:201].mean(axis=0).to_numpy()
+    return wmh_damage
