@@ -1,15 +1,18 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""     Find the best G coupling parameter based on healthy controls -- Version 1.1
-Last edit:  2023/03/15
+"""     Find the best G coupling parameter based on healthy controls -- Version 1.2
+Last edit:  2023/03/27
 Authors:    Leone, Riccardo (RL)
-Notes:      - Data loader file to evaluate the impact of preprocessing on modeling
+Notes:      - Data loader file 
             - Release notes:
-                * Current xcp_d implementation removes the first 4 timepoints already.
+                * Added modification from Schaefer 7-networks to 17-networks
 To do:      - 
-Comments:   Current version is for AROMA
+Comments:   Current implementation is for the Schaefer200 parcellation
 
-Sources:  Gustavo Patow's WholeBrain Code (https://github.com/dagush/WholeBrain) 
+Sources:  Gustavo Patow's WholeBrain Code (https://github.com/dagush/WholeBrain)
+          https://github.com/MICA-MNI/ENIGMA/tree/master/enigmatoolbox/datasets/matrices/hcp_connectivity (for ENIGMA SC matrix)
+
+
 """
 
 #%% ~~ Imports and directories ~~ %%#
@@ -87,8 +90,38 @@ def get_sc():
 
 
 def get_sc_enigma():
-    sc = pd.read_csv(UTL_DIR / "sc_enigma.csv", header=None)
-    return sc.to_numpy()
+    """
+    This function loads and transforms the structural connectivity matrix downloaded from the ENIGMA-TOOLBOX
+    (which is in the Schaefer200 7-Network atlas into the Schaefer 17-network atlas.
+
+    Args:
+        None
+
+    Returns:
+        sc_17(np.array): the ENIGMA struc. conn. matrix ordered as the Schaefer200 parcels 17-network atlas
+    """
+    net17 = pd.read_csv(UTL_DIR / "Schaefer17Net.txt", delimiter = ',')
+    net7 = pd.read_csv(UTL_DIR / "Schaefer7Net.txt", delimiter = ',')
+    sc = np.loadtxt(UTL_DIR / "sc_enigma.csv", delimiter = ',')
+    #%%
+    net7 = net7.rename(columns={'ROI Label': 'ROI_label_7'})
+    net17 = net17.rename(columns={'ROI Label': 'ROI_label_17'})
+    unite_df = pd.merge(net17, net7, on = ['R', 'A', 'S'])
+    # %%
+    unite_df.sort_values('ROI_label_7')
+    unite_df['ROI_index_17'] = unite_df['ROI_label_17'] - 1
+    unite_df['ROI_index_7'] = unite_df['ROI_label_7'] - 1 
+    unite_df = unite_df.sort_values('ROI_label_7')
+    seven_to_teen_dict = pd.Series(unite_df.ROI_index_17.values,index=unite_df.ROI_index_7).to_dict() 
+
+    n_rows, n_cols = sc.shape
+    sc_17 = np.empty_like(sc)
+    for i, row_label in enumerate(seven_to_teen_dict.keys()):
+            new_i = seven_to_teen_dict[i]
+            sc_17[new_i, :] = sc[i, :]
+            new_j = seven_to_teen_dict[i]
+            sc_17[:, new_j] = sc[:, i]
+    return sc_17
 
 
 def get_classification(subjs):
@@ -113,11 +146,15 @@ def get_classification(subjs):
 def get_sc_wmh_weighted(subj, sc_norm):
     wmh_df = pd.read_csv(LQT_DIR / f"sub-{subj}" / "pct_spared_sc_matrix.csv")
     wmh_df = wmh_df.iloc[:200, 1:201]
-    sc_wmh_weighted = sc_norm * wmh_df / 100.
+    sc_wmh_weighted = sc_norm * wmh_df / 100.0
     return sc_wmh_weighted
+
 
 def get_node_damage(subj):
     wmh_df = pd.read_csv(LQT_DIR / f"sub-{subj}" / "pct_sdc_matrix.csv")
     # Computes the percent damage sustained by each node
     wmh_damage = wmh_df.iloc[:200, 1:201].mean(axis=0).to_numpy()
     return wmh_damage
+
+#%%
+
