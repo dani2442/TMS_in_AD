@@ -31,7 +31,7 @@ def preprocessingPipeline(all_fMRI,  #, abeta,
     print("###################################################################\n")
     # Now, optimize all we (G) values: determine optimal G to work with
     balancedParms = [{'we': we} for we in wes]
-    fitting = ParmSeep.distanceForAll_Parms(all_fMRI, wes, balancedParms, NumSimSubjects=len(all_fMRI),  #10,
+    fitting = ParmSeep.distanceForAll_Parms(all_fMRI, wes, balancedParms, NumSimSubjects=len(all_fMRI),
                                             distanceSettings=distanceSettings,
                                             parmLabel='we',
                                             outFilePath=outFilePath)

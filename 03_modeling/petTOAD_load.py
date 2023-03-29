@@ -10,12 +10,13 @@ To do:      -
 Comments:   Current implementation is for the Schaefer200 parcellation
 
 Sources:  Gustavo Patow's WholeBrain Code (https://github.com/dagush/WholeBrain)
-          https://github.com/MICA-MNI/ENIGMA/tree/master/enigmatoolbox/datasets/matrices/hcp_connectivity (for ENIGMA SC matrix)
-
+          ENIGMA SC matrix (https://github.com/MICA-MNI/ENIGMA/tree/master/enigmatoolbox/datasets/matrices/hcp_connectivity)  
+          Labels Schaefer200 7-networks (https://github.com/ThomasYeoLab/CBIG/blob/master/stable_projects/brain_parcellation/Schaefer2018_LocalGlobal/Parcellations/MNI/Centroid_coordinates/Schaefer2018_200Parcels_7Networks_order_FSLMNI152_1mm.Centroid_RAS.csv)
+          Labels Schaefer200 17-networks (https://github.com/ThomasYeoLab/CBIG/blob/master/stable_projects/brain_parcellation/Schaefer2018_LocalGlobal/Parcellations/MNI/Centroid_coordinates/Schaefer2018_200Parcels_17Networks_order_FSLMNI152_1mm.Centroid_RAS.csv)
 
 """
 
-#%% ~~ Imports and directories ~~ %%#
+# %% ~~ Imports and directories ~~ %%#
 # Import needed packages
 import numpy as np
 import pandas as pd
@@ -31,7 +32,6 @@ FPRP_DIR = PREP_DIR / "fmriprep"
 UTL_DIR = DATA_DIR / "utils"
 WMH_DIR = PREP_DIR / "WMH_segmentation"
 XCP_DIR = PREP_DIR / "xcp_d"
-AROMA_DIR = XCP_DIR / "aroma"
 
 REL_SES = "M00"
 
@@ -41,15 +41,14 @@ if not Path.is_dir(RES_DIR):
 
 LQT_DIR = RES_DIR / "LQT"
 
-if not Path.is_dir(AROMA_DIR):
-    Path.mkdir(AROMA_DIR)
-
 # Set the output directory
 OUT_DIR = RES_DIR / "Finding_best_G"
-#%% ~~ Load data ~~ %%#
+
+
+# %% ~~ Load data ~~ %%#
 def get_layout_subjs():
     print("Getting the layout...")
-    layout = BIDSLayout(AROMA_DIR, validate=False, config=["bids", "derivatives"])
+    layout = BIDSLayout(XCP_DIR, validate=False, config=["bids", "derivatives"])
     subjs = layout.get_subjects()
     print("Done with the layout...")
     return layout, subjs
@@ -58,7 +57,7 @@ def get_layout_subjs():
 def get_method_ts(subj):
     try:
         sub_ts = np.genfromtxt(
-            AROMA_DIR
+            XCP_DIR
             / f"sub-{subj}"
             / f"ses-{REL_SES}"
             / "func"
@@ -67,7 +66,7 @@ def get_method_ts(subj):
         )
     except:
         sub_ts = np.genfromtxt(
-            AROMA_DIR
+            XCP_DIR
             / f"sub-{subj}"
             / f"ses-{REL_SES}"
             / "func"
@@ -100,27 +99,26 @@ def get_sc_enigma():
     Returns:
         sc_17(np.array): the ENIGMA struc. conn. matrix ordered as the Schaefer200 parcels 17-network atlas
     """
-    net17 = pd.read_csv(UTL_DIR / "Schaefer17Net.txt", delimiter = ',')
-    net7 = pd.read_csv(UTL_DIR / "Schaefer7Net.txt", delimiter = ',')
-    sc = np.loadtxt(UTL_DIR / "sc_enigma.csv", delimiter = ',')
-    #%%
-    net7 = net7.rename(columns={'ROI Label': 'ROI_label_7'})
-    net17 = net17.rename(columns={'ROI Label': 'ROI_label_17'})
-    unite_df = pd.merge(net17, net7, on = ['R', 'A', 'S'])
+    net17 = pd.read_csv(UTL_DIR / "Schaefer17Net.txt", delimiter=",")
+    net7 = pd.read_csv(UTL_DIR / "Schaefer7Net.txt", delimiter=",")
+    sc = np.loadtxt(UTL_DIR / "sc_enigma.csv", delimiter=",")
+    net7 = net7.rename(columns={"ROI Label": "ROI_label_7"})
+    net17 = net17.rename(columns={"ROI Label": "ROI_label_17"})
+    unite_df = pd.merge(net17, net7, on=["R", "A", "S"])
     # %%
-    unite_df.sort_values('ROI_label_7')
-    unite_df['ROI_index_17'] = unite_df['ROI_label_17'] - 1
-    unite_df['ROI_index_7'] = unite_df['ROI_label_7'] - 1 
-    unite_df = unite_df.sort_values('ROI_label_7')
-    seven_to_teen_dict = pd.Series(unite_df.ROI_index_17.values,index=unite_df.ROI_index_7).to_dict() 
+    unite_df.sort_values("ROI_label_7")
+    unite_df["ROI_index_17"] = unite_df["ROI_label_17"] - 1
+    unite_df["ROI_index_7"] = unite_df["ROI_label_7"] - 1
+    unite_df = unite_df.sort_values("ROI_label_7")
+    seven_to_teen_dict = pd.Series(
+        unite_df.ROI_index_17.values, index=unite_df.ROI_index_7
+    ).to_dict()
 
-    n_rows, n_cols = sc.shape
-    sc_17 = np.empty_like(sc)
-    for i, row_label in enumerate(seven_to_teen_dict.keys()):
-            new_i = seven_to_teen_dict[i]
-            sc_17[new_i, :] = sc[i, :]
-            new_j = seven_to_teen_dict[i]
-            sc_17[:, new_j] = sc[:, i]
+    sc_17 = sc.copy()
+    for k, v in seven_to_teen_dict.items():
+        sc_17[:, [k, v]] = sc_17[:, [v, k]]
+        sc_17[[k, v], :] = sc_17[[v, k], :]
+
     return sc_17
 
 
@@ -155,6 +153,4 @@ def get_node_damage(subj):
     # Computes the percent damage sustained by each node
     wmh_damage = wmh_df.iloc[:200, 1:201].mean(axis=0).to_numpy()
     return wmh_damage
-
-#%%
 

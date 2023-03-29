@@ -20,9 +20,12 @@ import sys
 from petTOAD_load import *
 
 # --------------------------------------------------------------------------
-#%%
 # Begin setup...
 # --------------------------------------------------------------------------
+
+# Subject names and timeseries dictionary
+_, subjs = get_layout_subjs()
+
 import WholeBrain.Models.supHopf as Hopf
 
 Hopf.initialValue = 0.1
@@ -73,7 +76,6 @@ def checking_timeseries(all_fMRI):
     zeros_ts = []
     for subj, ts in all_fMRI.items():
         zeros_row = np.where(np.all(np.isclose(ts, 0), axis=1))[0]
-        print(zeros_row.size)
         if zeros_row.size > 0:
             print(f"Subj-{subj} has some ROI with only 0s...")
             zeros_ts.append(subj)
@@ -88,13 +90,11 @@ def checking_timeseries(all_fMRI):
 
     return all_fMRI_cleaned
 
-
-#%% Load SCs, timelines and group classifications
+# Load SCs, timelines and group classifications
 sc = get_sc_enigma()
 # Prevent full synchronization of the model
 sc_norm = sc * 0.2 / sc.max()
-# Subject names and timeseries dictionary
-_, subjs = get_layout_subjs()
+
 
 all_fMRI = {}
 for subj in subjs:
@@ -104,6 +104,7 @@ all_fMRI = checking_timeseries(all_fMRI)
 HC, MCI, AD = get_classification(subjs)
 all_HC_fMRI = {k: v for k, v in all_fMRI.items() if k in HC}
 baseline_group_ts = np.array([ts for id, ts in all_HC_fMRI.items() if id in HC])
+#%%
 nNodes, Tmax = list(all_HC_fMRI.values())[0].shape
 
 # ------------------------------------------------
