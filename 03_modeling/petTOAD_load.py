@@ -78,7 +78,7 @@ def get_method_ts(subj):
     # Z-score the signal
     sub_ts_post = clean(sub_ts, detrend=False, standardize="zscore", filter=None, t_r = 3.)
 
-    return sub_ts, sub_ts_post
+    return sub_ts_post
 
 
 def get_sc():
