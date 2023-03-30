@@ -27,6 +27,7 @@ from petTOAD_load import *
 _, subjs = get_layout_subjs()
 
 import WholeBrain.Models.supHopf as Hopf
+from WholeBrain.simulate_SimOnly import Tmaxneuronal
 
 Hopf.initialValue = 0.1
 neuronalModel = Hopf
@@ -40,7 +41,7 @@ integrator.clamping = False
 integrator.verbose = False
 # Integration parms...
 dt = 5e-5
-tmax = 193.
+tmax = 193
 ds = 1e-4
 Tmaxneuronal = int((tmax+dt))
 
@@ -62,8 +63,8 @@ import WholeBrain.Utils.filteredPowerSpectralDensity as filtPowSpectr
 import WholeBrain.BOLDFilters as BOLDFilters
 
 # NARROW LOW BANDPASS just for filtering the intrinsic frequencies
-BOLDFilters.flp = 0.04  # lowpass frequency of filter
-BOLDFilters.fhi = 0.07  # highpass
+BOLDFilters.flp = 0.008  # lowpass frequency of filter
+BOLDFilters.fhi = 0.08 # highpass
 BOLDFilters.TR = 3.0
 # --------------------------------------------------------------------------
 #  End setup...
@@ -93,7 +94,7 @@ def checking_timeseries(all_fMRI):
 # Load SCs, timelines and group classifications
 sc = get_sc_enigma()
 # Prevent full synchronization of the model
-sc_norm = sc * 0.2 / sc.max()
+#sc_norm = sc * 0.2 / sc.max()
 
 
 all_fMRI = {}
@@ -108,6 +109,16 @@ baseline_group_ts = np.array([ts for id, ts in all_HC_fMRI.items() if id in HC])
 nNodes, Tmax = list(all_HC_fMRI.values())[0].shape
 
 # ------------------------------------------------
+# Hopf.beta = 0.01
+f_diff = filtPowSpectr.filtPowSpetraMultipleSubjects(
+    baseline_group_ts, TR=3.0
+)  # baseline_group[0].reshape((1,52,193))
+f_diff[np.where(f_diff == 0)] = np.mean(
+    f_diff[np.where(f_diff != 0)]
+)  # f_diff(find(f_diff==0))=mean(f_diff(find(f_diff~=0)))
+# Hopf.omega = repmat(2*pi*f_diff',1,2);     # f_diff is the frequency power
+Hopf.omega = 2 * np.pi * f_diff
+
 #%%
 # Configure and compute Simulation
 # ------------------------------------------------
@@ -128,19 +139,10 @@ simulateBOLD.Tmaxneuronal = (Tmax - 1) * simulateBOLD.TR + 30
 integrator.ds = simulateBOLD.TR  # record every TR millisecond
 
 base_a_value = -0.02
-Hopf.setParms({"a": base_a_value})
-Hopf.setParms({"SC": sc_norm})
+# Hopf.setParms({"a": base_a_value})
+# Hopf.setParms({"SC": sc_norm})
 
-# Hopf.beta = 0.01
-f_diff = filtPowSpectr.filtPowSpetraMultipleSubjects(
-    baseline_group_ts, TR=3.0
-)  # baseline_group[0].reshape((1,52,193))
-f_diff[np.where(f_diff == 0)] = np.mean(
-    f_diff[np.where(f_diff != 0)]
-)  # f_diff(find(f_diff==0))=mean(f_diff(find(f_diff~=0)))
-# Hopf.omega = repmat(2*pi*f_diff',1,2);     # f_diff is the frequency power
-Hopf.omega = 2 * np.pi * f_diff
-
+# Set the filters for the simulations
 print("ADHopf Setup done!")
 
 # ================================================================================================================

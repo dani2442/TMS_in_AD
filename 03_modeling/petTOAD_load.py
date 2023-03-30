@@ -73,11 +73,12 @@ def get_method_ts(subj):
             / f"sub-{subj}_ses-{REL_SES}_task-rest_space-MNI152NLin2009cAsym_atlas-Schaefer217_timeseries.tsv",
             delimiter="\t",
         )
-    # The first 4 timepoints are already dropped in my implementation of xcp_d AROMA, transpose as Nxt timeseries
+    # The first 4 timepoints are already dropped in xcp_d AROMA, transpose as Nxt timeseries
     sub_ts = sub_ts.T
     # Z-score the signal
-    sub_ts_post = clean(sub_ts, detrend=False, standardize="zscore", filter=None)
-    return sub_ts_post
+    sub_ts_post = clean(sub_ts, detrend=False, standardize="zscore", filter=None, t_r = 3.)
+
+    return sub_ts, sub_ts_post
 
 
 def get_sc():
@@ -99,13 +100,12 @@ def get_sc_enigma():
     Returns:
         sc_17(np.array): the ENIGMA struc. conn. matrix ordered as the Schaefer200 parcels 17-network atlas
     """
-    net17 = pd.read_csv(UTL_DIR / "Schaefer17Net.txt", delimiter=",")
-    net7 = pd.read_csv(UTL_DIR / "Schaefer7Net.txt", delimiter=",")
-    sc = np.loadtxt(UTL_DIR / "sc_enigma.csv", delimiter=",")
+    net17 = pd.read_csv(UTL_DIR / "200Schaefer17Net.txt", delimiter=",")
+    net7 = pd.read_csv(UTL_DIR / "200Schaefer7Net.txt", delimiter=",")
+    sc = np.loadtxt(UTL_DIR / "sc_enigma_200.csv", delimiter=",")
     net7 = net7.rename(columns={"ROI Label": "ROI_label_7"})
     net17 = net17.rename(columns={"ROI Label": "ROI_label_17"})
     unite_df = pd.merge(net17, net7, on=["R", "A", "S"])
-    # %%
     unite_df.sort_values("ROI_label_7")
     unite_df["ROI_index_17"] = unite_df["ROI_label_17"] - 1
     unite_df["ROI_index_7"] = unite_df["ROI_label_7"] - 1
@@ -113,16 +113,20 @@ def get_sc_enigma():
     seven_to_teen_dict = pd.Series(
         unite_df.ROI_index_17.values, index=unite_df.ROI_index_7
     ).to_dict()
-
     sc_17 = sc.copy()
     for k, v in seven_to_teen_dict.items():
         sc_17[:, [k, v]] = sc_17[:, [v, k]]
         sc_17[[k, v], :] = sc_17[[v, k], :]
-
+    sc_17[sc_17 < 0] = 0
+    # logMatrix = np.log(sc_17+1)
+    # maxNodeInput = np.max(np.sum(sc_17, axis=0))  
+    # maxLogInput = np.max(np.sum(logMatrix, axis=0))
+    # finalMatrix = logMatrix * maxNodeInput / maxLogInput
     return sc_17
 
 
 def get_classification(subjs):
+
     adnimerge = pd.read_csv(UTL_DIR / "ADNIMERGE.csv")
     adnimerge["PTID"] = adnimerge["PTID"].str.replace("_", "")
     adnimerge["PTID"] = "ADNI" + adnimerge["PTID"]
@@ -154,3 +158,5 @@ def get_node_damage(subj):
     wmh_damage = wmh_df.iloc[:200, 1:201].mean(axis=0).to_numpy()
     return wmh_damage
 
+
+#%%
