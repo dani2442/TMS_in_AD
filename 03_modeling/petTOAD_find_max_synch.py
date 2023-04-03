@@ -38,7 +38,7 @@ def preprocessingPipeline(all_fMRI,  #, abeta,
                                             outFilePath=outFilePath)
 
     optimal = {sd: distanceSettings[sd][0].findMinMax(fitting[sd]) for sd in distanceSettings}
-    return optimal
+    return optimal, fitting
 
 
 # =====================================================================
@@ -65,9 +65,11 @@ outFilePath = str(HC_DIR)
 a_s = np.round(np.arange(-0.020, 0.000, 0.002), 3)
 synch_vals = np.arange(0.1,0.21, 0.01)
 
-res_dict = {}
+opt_dict = {}
+fit_dict = {}
 for a in a_s:
-    res_dict[a] = {}
+    opt_dict[a] = {}
+    fit_dict[a] = {}
     Hopf.setParms({'a': a})    
 for val in synch_vals:
 
@@ -76,16 +78,24 @@ for val in synch_vals:
     wes = np.arange(0, 6, .5)
     all_HC_fMRI = {k:v for k,v in all_HC_fMRI.items() if k in list(all_HC_fMRI.keys())[:5]}
     print(f'Processing {a}, {val}')
-    optimal = preprocessingPipeline(all_HC_fMRI,
+    optimal, fitting = preprocessingPipeline(all_HC_fMRI,
                                         distanceSettings,
                                         wes, a, val)
 
-    res_dict[a][val] = optimal
+    opt_dict[a][val] = optimal
+    fit_dict[a][val] = optimal
 
-f = open(outFilePath + f"/evaluate_synchronicity.pkl","wb")
+f = open(outFilePath + f"/optimal_dict_synch.pkl","wb")
 # write json object to file
-pickle.dump(res_dict, f)
+pickle.dump(opt_dict, f)
 # close file
 f.close()
+
+g = open(outFilePath + f"/fitting_dict_synch.pkl","wb")
+# write json object to file
+pickle.dump(opt_dict, g)
+# close file
+g.close()
+
 
 # %%
