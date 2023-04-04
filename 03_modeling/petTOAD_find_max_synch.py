@@ -83,7 +83,7 @@ for val in synch_vals:
                                         wes, a, val)
 
     opt_dict[a][val] = optimal
-    fit_dict[a][val] = optimal
+    fit_dict[a][val] = fitting
 
 f = open(outFilePath + f"/optimal_dict_synch.pkl","wb")
 # write json object to file
