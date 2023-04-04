@@ -14,10 +14,8 @@ Sources:  Gustavo Patow's WholeBrain Code (https://github.com/dagush/WholeBrain)
 
 #%% Hopf code: Pre-processing (finding G)
 #  -------------------------------------------------------------------------------------
-import pickle
+import json
 from petTOAD_setup import *
-import matplotlib.pyplot as plt
-import WholeBrain.Utils.plotFitting as plotFitting
 
 # =====================================================================
 # =====================================================================
@@ -85,17 +83,10 @@ for val in synch_vals:
     opt_dict[a][val] = optimal
     fit_dict[a][val] = fitting
 
-f = open(outFilePath + f"/optimal_dict_synch.pkl","wb")
-# write json object to file
-pickle.dump(opt_dict, f)
-# close file
-f.close()
+with open(outFilePath + f"/optimal_dict_synch.json", 'w', encoding='utf-8') as f:
+    json.dump(opt_dict, f, ensure_ascii=False, indent=4)
 
-g = open(outFilePath + f"/fitting_dict_synch.pkl","wb")
-# write json object to file
-pickle.dump(fit_dict, g)
-# close file
-g.close()
-
+with open(outFilePath + f"/fitting_dict_synch.json", 'w', encoding='utf-8') as g:
+    json.dump(fit_dict, g, ensure_ascii=False, indent=4)
 
 # %%
