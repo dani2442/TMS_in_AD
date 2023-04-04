@@ -93,7 +93,7 @@ f.close()
 
 g = open(outFilePath + f"/fitting_dict_synch.pkl","wb")
 # write json object to file
-pickle.dump(opt_dict, g)
+pickle.dump(fit_dict, g)
 # close file
 g.close()
 
