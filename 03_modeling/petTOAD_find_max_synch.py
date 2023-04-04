@@ -12,30 +12,53 @@ Comments:
 Sources:  Gustavo Patow's WholeBrain Code (https://github.com/dagush/WholeBrain) 
 """
 
-#%% Hopf code: Pre-processing (finding G)
+# %% Hopf code: Pre-processing (finding G)
 #  -------------------------------------------------------------------------------------
 import json
 from petTOAD_setup import *
+
+
+class NpEncoder(json.JSONEncoder):
+    def default(self, obj):
+        if isinstance(obj, np.integer):
+            return int(obj)
+        if isinstance(obj, np.floating):
+            return float(obj)
+        if isinstance(obj, np.ndarray):
+            return obj.tolist()
+        return super(NpEncoder, self).default(obj)
+
 
 # =====================================================================
 # =====================================================================
 #                      Single Subject Pipeline
 # =====================================================================
 # =====================================================================
-def preprocessingPipeline(all_fMRI,  #, abeta,
-                          distanceSettings,  # This is a dictionary of {name: (distance module, apply filters bool)}
-                          wes, a, val):
+def preprocessingPipeline(
+    all_fMRI,  # , abeta,
+    distanceSettings,  # This is a dictionary of {name: (distance module, apply filters bool)}
+    wes,
+    a,
+    val,
+):
     print("\n\n###################################################################")
     print("# Compute ParmSeep")
     print("###################################################################\n")
     # Now, optimize all we (G) values: determine optimal G to work with
-    balancedParms = [{'we': we} for we in wes]
-    fitting = ParmSeep.distanceForAll_Parms(all_fMRI, wes, balancedParms, NumSimSubjects=5, #len(all_fMRI),
-                                            distanceSettings=distanceSettings,
-                                            parmLabel=f'a-{np.round(a, 3)}_synch-{val}_we',
-                                            outFilePath=outFilePath)
+    balancedParms = [{"we": we} for we in wes]
+    fitting = ParmSeep.distanceForAll_Parms(
+        all_fMRI,
+        wes,
+        balancedParms,
+        NumSimSubjects=5,  # len(all_fMRI),
+        distanceSettings=distanceSettings,
+        parmLabel=f"a-{np.round(a, 3)}_synch-{val}_we",
+        outFilePath=outFilePath,
+    )
 
-    optimal = {sd: distanceSettings[sd][0].findMinMax(fitting[sd]) for sd in distanceSettings}
+    optimal = {
+        sd: distanceSettings[sd][0].findMinMax(fitting[sd]) for sd in distanceSettings
+    }
     return optimal, fitting
 
 
@@ -47,46 +70,47 @@ def preprocessingPipeline(all_fMRI,  #, abeta,
 
 
 visualizeAll = True
-subjectName = 'Best_synch'
+subjectName = "Best_synch"
 
 if not Path.is_dir(OUT_DIR):
     Path.mkdir(OUT_DIR)
 
-HC_DIR = OUT_DIR / f'{subjectName}'
+HC_DIR = OUT_DIR / f"{subjectName}"
 
 if not Path.is_dir(HC_DIR):
     Path.mkdir(HC_DIR)
 
 outFilePath = str(HC_DIR)
 
-#%%
-a_s = np.round(np.arange(-0.020, 0.000, 0.002), 3)
-synch_vals = np.arange(0.1,0.21, 0.01)
+# %%
+a_s = np.round(np.arange(-0.020, 0.000, 0.01), 3)
+synch_vals = np.round(np.arange(0.1, 0.21, 0.10), 3)
 
 opt_dict = {}
 fit_dict = {}
 for a in a_s:
     opt_dict[a] = {}
     fit_dict[a] = {}
-    Hopf.setParms({'a': a})    
-for val in synch_vals:
+    Hopf.setParms({"a": a})
 
-    sc_norm = sc * val / sc.max()      
+for val in synch_vals:
+    sc_norm = sc * val / sc.max()
     Hopf.setParms({"SC": sc_norm})
-    wes = np.arange(0, 6, .5)
-    all_HC_fMRI = {k:v for k,v in all_HC_fMRI.items() if k in list(all_HC_fMRI.keys())[:5]}
-    print(f'Processing {a}, {val}')
-    optimal, fitting = preprocessingPipeline(all_HC_fMRI,
-                                        distanceSettings,
-                                        wes, a, val)
+    wes = np.arange(0, 6, 0.5)
+    all_HC_fMRI = {
+        k: v for k, v in all_HC_fMRI.items() if k in list(all_HC_fMRI.keys())[:5]
+    }
+    print(f"Processing {a}, {val}")
+    optimal, fitting = preprocessingPipeline(all_HC_fMRI, distanceSettings, wes, a, val)
 
     opt_dict[a][val] = optimal
     fit_dict[a][val] = fitting
 
-with open(outFilePath + f"/optimal_dict_synch.json", 'w', encoding='utf-8') as f:
-    json.dump(opt_dict, f, ensure_ascii=False, indent=4)
 
-with open(outFilePath + f"/fitting_dict_synch.json", 'w', encoding='utf-8') as g:
-    json.dump(fit_dict, g, ensure_ascii=False, indent=4)
+with open(outFilePath + f"/optimal_dict_synch.json", "w", encoding="utf-8") as f:
+    json.dumps(opt_dict, f, cls=NpEncoder)
+
+with open(outFilePath + f"/fitting_dict_synch.json", "w", encoding="utf-8") as g:
+    json.dumps(fit_dict, g, cls=NpEncoder)
 
 # %%
