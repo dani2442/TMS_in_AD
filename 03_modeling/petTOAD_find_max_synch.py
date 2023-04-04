@@ -83,7 +83,7 @@ if not Path.is_dir(HC_DIR):
 outFilePath = str(HC_DIR)
 
 # %%
-a_s = np.round(np.arange(-0.020, 0.000, 0.001), 3)
+a_s = np.round(np.arange(-0.020, 0.000, 0.002), 3)
 synch_vals = np.round(np.arange(0.1, 0.21, 0.01), 3)
 
 opt_dict = {}
