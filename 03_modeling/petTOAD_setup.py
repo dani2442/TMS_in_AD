@@ -16,7 +16,6 @@ Sources:  Gustavo Patow's WholeBrain Code (https://github.com/dagush/WholeBrain)
 # ==========================================================================
 # ==========================================================================
 import numpy as np
-import sys
 from petTOAD_load import *
 
 # --------------------------------------------------------------------------
@@ -94,7 +93,7 @@ def checking_timeseries(all_fMRI):
 # Load SCs, timelines and group classifications
 sc = get_sc_enigma()
 # Prevent full synchronization of the model
-#sc_norm = sc * 0.2 / sc.max()
+sc_norm = sc * 0.2 / sc.max()
 
 
 all_fMRI = {}
@@ -139,8 +138,8 @@ simulateBOLD.Tmaxneuronal = (Tmax - 1) * simulateBOLD.TR + 30
 integrator.ds = simulateBOLD.TR  # record every TR millisecond
 
 base_a_value = -0.02
-# Hopf.setParms({"a": base_a_value})
-# Hopf.setParms({"SC": sc_norm})
+Hopf.setParms({"a": base_a_value})
+Hopf.setParms({"SC": sc_norm})
 
 # Set the filters for the simulations
 print("ADHopf Setup done!")

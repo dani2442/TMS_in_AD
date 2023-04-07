@@ -15,8 +15,8 @@ Sources:  Gustavo Patow's WholeBrain Code (https://github.com/dagush/WholeBrain)
 #%% Hopf code: Pre-processing (finding G)
 #  -------------------------------------------------------------------------------------
 from petTOAD_setup import *
-import matplotlib.pyplot as plt
-import WholeBrain.Utils.plotFitting as plotFitting
+import sys 
+import pickle
 
 # =====================================================================
 # =====================================================================
@@ -31,13 +31,13 @@ def preprocessingPipeline(all_fMRI,  #, abeta,
     print("###################################################################\n")
     # Now, optimize all we (G) values: determine optimal G to work with
     balancedParms = [{'we': we} for we in wes]
-    fitting = ParmSeep.distanceForAll_Parms(all_fMRI, wes, balancedParms, NumSimSubjects=len(all_fMRI),
+    fitting = ParmSeep.distanceForAll_Parms(all_fMRI, wes, balancedParms, NumSimSubjects=1, #len(all_fMRI),
                                             distanceSettings=distanceSettings,
                                             parmLabel='we',
                                             outFilePath=outFilePath)
 
     optimal = {sd: distanceSettings[sd][0].findMinMax(fitting[sd]) for sd in distanceSettings}
-    return optimal
+    return optimal, fitting
 
 
 # =====================================================================
@@ -45,26 +45,26 @@ def preprocessingPipeline(all_fMRI,  #, abeta,
 #                            main
 # =====================================================================
 # =====================================================================
-def processRangeValues(argv):
-    import getopt
-    try:
-        opts, args = getopt.getopt(argv,'',["wStart=","wEnd=","wStep="])
-    except getopt.GetoptError:
-        print('AD_Prepro.py --wStart <wStartValue> --wEnd <wEndValue> --wStep <wStepValue>')
-        sys.exit(2)
-    wStart = 0.; wEnd = 6.0; wStep = 0.01
-    for opt, arg in opts:
-        if opt == '-h':
-            print('AD_Prepro.py -wStart <wStartValue> -wEnd <wEndValue> -wStep <wStepValue>')
-            sys.exit()
-        elif opt in ("--wStart"):
-            wStart = float(arg)
-        elif opt in ("--wEnd"):
-            wEnd = float(arg)
-        elif opt in ("--wStep"):
-            wStep = float(arg)
-    print(f'Input values are: wStart={wStart}, wEnd={wEnd}, wStep={wStep}')
-    return wStart, wEnd, wStep
+# def processRangeValues(argv):
+#     import getopt
+#     try:
+#         opts, args = getopt.getopt(argv,'',["wStart=","wEnd=","wStep="])
+#     except getopt.GetoptError:
+#         print('AD_Prepro.py --wStart <wStartValue> --wEnd <wEndValue> --wStep <wStepValue>')
+#         sys.exit(2)
+#     wStart = 0.; wEnd = 3.0; wStep = 1
+#     for opt, arg in opts:
+#         if opt == '-h':
+#             print('AD_Prepro.py -wStart <wStartValue> -wEnd <wEndValue> -wStep <wStepValue>')
+#             sys.exit()
+#         elif opt in ("--wStart"):
+#             wStart = float(arg)
+#         elif opt in ("--wEnd"):
+#             wEnd = float(arg)
+#         elif opt in ("--wStep"):
+#             wStep = float(arg)
+#     print(f'Input values are: wStart={wStart}, wEnd={wEnd}, wStep={wStep}')
+#     return wStart, wEnd, wStep
 
 
 visualizeAll = True
@@ -81,19 +81,31 @@ if not Path.is_dir(HC_DIR):
 outFilePath = str(HC_DIR)
 
 #%%
-if __name__ == '__main__':
-    wStart, wEnd, wStep = processRangeValues(sys.argv[1:])
-    # Overwrite filters for intrinsic frequencies
-    plt.rcParams.update({'font.size': 22})
-
+# if __name__ == '__main__':
+#     wStart, wEnd, wStep = processRangeValues(sys.argv[1:])
     # ----------- Plot whatever results we have collected ------------
     # quite useful to peep at intermediate results
     # G_optim.loadAndPlot(outFilePath='Data_Produced/AD/'+subjectName+'-temp', distanceSettings=distanceSettings)
 
-    wes = np.arange(wStart, wEnd + wStep, wStep)
-    optimal = preprocessingPipeline(all_HC_fMRI,
+all_HC_fMRI = {k:v for k,v in all_HC_fMRI.items() if k in list(all_HC_fMRI.keys())[:2]}
+wes = np.arange(0, 3., 1)
+optimal, fitting = preprocessingPipeline(all_HC_fMRI,
                                     distanceSettings,
                                     wes)
+
+
+f = open(outFilePath + f"/optimal_dict_synch.pkl","wb")
+# write json object to file
+pickle.dump(optimal, f)
+# close file
+f.close()
+
+g = open(outFilePath + f"/fitting_dict_synch.pkl","wb")
+# write json object to file
+pickle.dump(fitting, g)
+# close file
+g.close()
+
     # # =======  Only for quick load'n plot test...
     # plotFitting.loadAndPlot(outFilePath+'/fitting_we{}.mat', distanceSettings, WEs=np.arange(wStart, wEnd+wStep, wStep),
     #                         empFilePath=outFilePath+'/fNeuro_emp.mat')
