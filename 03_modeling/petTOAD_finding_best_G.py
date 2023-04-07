@@ -31,7 +31,7 @@ def preprocessingPipeline(all_fMRI,  #, abeta,
     print("###################################################################\n")
     # Now, optimize all we (G) values: determine optimal G to work with
     balancedParms = [{'we': we} for we in wes]
-    fitting = ParmSeep.distanceForAll_Parms(all_fMRI, wes, balancedParms, NumSimSubjects=1, #len(all_fMRI),
+    fitting = ParmSeep.distanceForAll_Parms(all_fMRI, wes, balancedParms, NumSimSubjects= len(all_fMRI),
                                             distanceSettings=distanceSettings,
                                             parmLabel='we',
                                             outFilePath=outFilePath)
@@ -87,8 +87,7 @@ outFilePath = str(HC_DIR)
     # quite useful to peep at intermediate results
     # G_optim.loadAndPlot(outFilePath='Data_Produced/AD/'+subjectName+'-temp', distanceSettings=distanceSettings)
 
-all_HC_fMRI = {k:v for k,v in all_HC_fMRI.items() if k in list(all_HC_fMRI.keys())[:2]}
-wes = np.arange(0, 3., 1)
+wes = np.arange(0, 3., 0.01)
 optimal, fitting = preprocessingPipeline(all_HC_fMRI,
                                     distanceSettings,
                                     wes)

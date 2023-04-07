@@ -127,21 +127,30 @@ def get_sc_enigma():
 
 def get_classification(subjs):
 
-    adnimerge = pd.read_csv(UTL_DIR / "ADNIMERGE.csv")
+    adnimerge = pd.read_csv(RES_DIR / "petTOAD_dataframe.csv")
     adnimerge["PTID"] = adnimerge["PTID"].str.replace("_", "")
-    adnimerge["PTID"] = "ADNI" + adnimerge["PTID"]
-    HC = adnimerge[
+
+    HC_no_WMH = adnimerge[
         (adnimerge["PTID"].isin(subjs))
-        & ((adnimerge["DX_bl"] == "CN") | (adnimerge["DX_bl"] == "SMC"))
+        & ((adnimerge["Group_bin_subj"] == "CN_no_WMH"))
     ]["PTID"].unique()
-    MCI = adnimerge[
+
+    HC_WMH = adnimerge[
         (adnimerge["PTID"].isin(subjs))
-        & ((adnimerge["DX_bl"] == "EMCI") | (adnimerge["DX_bl"] == "LMCI"))
+        & ((adnimerge["Group_bin_subj"] == "CN_WMH"))
     ]["PTID"].unique()
-    AD = adnimerge[(adnimerge["PTID"].isin(subjs)) & (adnimerge["DX_bl"] == "AD")][
-        "PTID"
-    ].unique()
-    return HC, MCI, AD
+
+    MCI_no_WMH = adnimerge[
+        (adnimerge["PTID"].isin(subjs))
+        & ((adnimerge["Group_bin_subj"] == "MCI_no_WMH"))
+    ]["PTID"].unique()
+
+    MCI_WMH = adnimerge[
+        (adnimerge["PTID"].isin(subjs))
+        & ((adnimerge["Group_bin_subj"] == "MCI_WMH"))
+    ]["PTID"].unique()
+
+    return HC_no_WMH, HC_WMH, MCI_no_WMH, MCI_WMH
 
 
 # %%
@@ -160,3 +169,5 @@ def get_node_damage(subj):
 
 
 #%%
+
+# %%

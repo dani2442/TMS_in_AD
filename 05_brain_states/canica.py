@@ -1,7 +1,10 @@
+#%%
 import numpy as np
 import nibabel as nib
 from nilearn import image, input_data, datasets, plotting
 from nilearn.decomposition import CanICA
+from bids import BIDSLayout
+
 
 # Load the functional MRI data for multiple subjects
 func_filenames = ['subject1.nii.gz', 'subject2.nii.gz', 'subject3.nii.gz']

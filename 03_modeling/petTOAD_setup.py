@@ -62,7 +62,7 @@ import WholeBrain.Utils.filteredPowerSpectralDensity as filtPowSpectr
 import WholeBrain.BOLDFilters as BOLDFilters
 
 # NARROW LOW BANDPASS just for filtering the intrinsic frequencies
-BOLDFilters.flp = 0.008  # lowpass frequency of filter
+BOLDFilters.flp = 0.01  # lowpass frequency of filter
 BOLDFilters.fhi = 0.08 # highpass
 BOLDFilters.TR = 3.0
 # --------------------------------------------------------------------------
@@ -101,9 +101,9 @@ for subj in subjs:
     all_fMRI[subj] = get_method_ts(subj)
 # Now we have different types of preprocessing with XCP_D, choose only one for trying out
 all_fMRI = checking_timeseries(all_fMRI)
-HC, MCI, AD = get_classification(subjs)
-all_HC_fMRI = {k: v for k, v in all_fMRI.items() if k in HC}
-baseline_group_ts = np.array([ts for id, ts in all_HC_fMRI.items() if id in HC])
+HC_no_WMH, HC_WMH, MCI_no_WMH, MCI_WMH = get_classification(subjs)
+all_HC_fMRI = {k: v for k, v in all_fMRI.items() if k in HC_no_WMH}
+baseline_group_ts = np.array([ts for id, ts in all_HC_fMRI.items() if id in HC_no_WMH])
 #%%
 nNodes, Tmax = list(all_HC_fMRI.values())[0].shape
 
