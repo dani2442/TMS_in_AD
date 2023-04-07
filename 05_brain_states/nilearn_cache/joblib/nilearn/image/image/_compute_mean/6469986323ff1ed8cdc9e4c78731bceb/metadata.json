@@ -1,1 +1,0 @@
-{"duration": 9.48810076713562, "input_args": {"imgs": "'/home/riccardo/petTOAD/data/preprocessed/xcp_d/sub-ADNI002S6009/ses-M00/func/sub-ADNI002S6009_ses-M00_task-rest_run-1_space-MNI152NLin2009cAsym_res-2_desc-denoised_bold.nii.gz'", "target_affine": "None", "target_shape": "None", "smooth": "1"}}
