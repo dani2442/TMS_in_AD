@@ -1,156 +1,188 @@
+# %%
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""     Homogeneous and heterogeneous Hopf models -- Version 1.0
+"""     Homogeneous and heterogeneous Hopf models -- Version 1.1
 Last edit:  2023/03/20
 Authors:    Leone, Riccardo (RL)
 Notes:      - Script for finding the best G on HC
             - Release notes:
-                * Initial release
+                *Refactored
 To do:      - 
 Comments: 
 
 Sources:  Gustavo Patow's WholeBrain Code (https://github.com/dagush/WholeBrain) 
 """
 
-# Set up Hopf as our model 
+# Set up Hopf as our model
 from petTOAD_setup import *
 import pickle
 
 # ------------------------------------------------
-# Retrieve the data for all subjects 
+# Retrieve the data for all subjects
 # ------------------------------------------------
-conditionToStudy = 'hc' # one of 'hc', 'mci', 'all'
-mode = 'heterogeneous' # one of 'homogeneous', 'heterogeneous_sc', 'heterogeneous_node'
-random = True # set to True if you want to shuffle the wmh weights
+conditionToStudy = "hc"  # one of 'hc', 'mci', 'all'
+mode = "homogeneous"  # one of 'homogeneous', 'heterogeneous_sc', 'heterogeneous_node'
+random = True  # set to True if you want to shuffle the wmh weights
 
-if conditionToStudy == 'hc':
+wmh_dict = get_wmh_load_homogeneous()
 
+if conditionToStudy == "hc":
     # Use all_HC_fMRI used to calculate the intrinsic frequencies
-    all_fMRI = all_HC_fMRI
-    nsubjects = len(all_fMRI) 
+    all_fMRI = {k: v for k, v in all_fMRI.items() if k in HC_WMH}
+    nsubjects = len(all_fMRI)
 
-    if mode == 'homogeneous':
-        wmBurden_dict = {k:v['total_WMH_load'] for k, v in all_dictionary.items() if k in HC}
-        wmBurden = np.array([v for v in wmBurden_dict.values()])
+    if mode == "homogeneous":
+        wmh_burden_dict = {k: v for k, v in wmh_dict.items() if k in HC_WMH}
 
-    elif mode == 'heterogeneous_sc':
+    elif mode == "heterogeneous_sc":
         sc_dict = {}
         for subj in subjs:
             sc_norm = get_sc_wmh_weighted(subj, sc_norm)
             sc_dict[subj] = sc_norm
 
-    elif mode == 'heterogeneous_node':
-        wmBurden_list = []
+    elif mode == "heterogeneous_node":
+        wmh_burden_list = []
         for subj in subjs:
             node_damage_subj = get_node_damage(subj)
-            wmBurden_list.append(node_damage_subj)
-        wmBurden = np.array(wmBurden_list)
+            wmh_burden_list.append(node_damage_subj)
+        wmh_burden = np.array(wmh_burden_list)
 
-        
-elif conditionToStudy == 'mci':
 
+elif conditionToStudy == "mci":
     all_fMRI = {k: v for k, v in all_fMRI.items() if k in MCI}
-    nsubjects = len(all_fMRI) 
+    nsubjects = len(all_fMRI)
 
-    if mode == 'homogeneous':
-        wmBurden_dict = {k:v['total_WMH_load'] for k, v in all_dictionary.items() if k in MCI} # Need to write the function to obtain this.
-        wmBurden = np.array([v for v in wmBurden_dict.values()])
+    if mode == "homogeneous":
+        wmh_burden_dict = {k: v for k, v in wmh_dict.items() if k in MCI}
 
-    elif mode == 'heterogeneous_sc':
+    elif mode == "heterogeneous_sc":
         sc_dict = {}
         for subj in subjs:
             sc_norm = get_sc_wmh_weighted(subj, sc_norm)
             sc_dict[subj] = sc_norm
 
-    elif mode == 'heterogeneous_node':
-        wmBurden_dict = {}
+    elif mode == "heterogeneous_node":
+        wmh_burden_dict = {}
         for subj in subjs:
             node_damage_subj = get_node_damage(subj)
-            wmBurden_dict[subj] = (node_damage_subj)
-
+            wmh_burden_dict[subj] = node_damage_subj
+    elif mode == "delay":
+        pass
 # Still to implement...
 if random:
-    np.random.shuffle(wmBurden)
-
+    if mode == "homogeneous":
+        wmh_burden = np.random.shuffle(wmh_burden)
+    elif mode == "heterogeneous_sc":
+        pass
+    elif mode == "heterogeneous_node":
+        pass
+    elif mode == "delay":
+        pass
 
 # Change the file to where you want to save results
 if not random:
-    outFilePath = str(RES_DIR / f'{mode}_model') 
+    outFilePath = str(RES_DIR / f"{mode}_model")
 else:
-    outFilePath = str(RES_DIR / f'{mode}random_model') 
+    outFilePath = str(RES_DIR / f"{mode}_random_model")
 
 
-def fittingPipeline_homogeneous(subj_fMRI,
-                    distanceSettings,  # This is a dictionary of {name: (distance module, apply filters bool)}
-                    wmWs, wmBurden, subjectName):
+def fittingPipeline_homogeneous(
+    subj_fMRI,
+    distanceSettings,  # This is a dictionary of {name: (distance module, apply filters bool)}
+    wmWs,
+    wmh_burden,
+    subjectName,
+):
     print("\n\n###################################################################")
     print("# Fitting with ParmSeep")
     print("###################################################################\n")
     # Now, evaluate different bifurcation parameters depending on WMH burden
-    wmParms = [{'a': base_a_value + (wmW * wmBurden)} for wmW in wmWs]
-    fitting = ParmSeep.distanceForAll_Parms(subj_fMRI,
-                                            wmWs, 
-                                            wmParms,
-                                            NumSimSubjects=len(all_fMRI),
-                                            distanceSettings=distanceSettings,
-                                            parmLabel=f'a_{mode}_{conditionToStudy}_random_{random}',
-                                            fileNameSuffix='_'+subjectName,
-                                            outFilePath=outFilePath)
+    wmParms = [
+        {"a": base_a_value + (wmW * wmh_burden) + b} for wmW in wmWs
+    ]  # need to set up b
+    fitting = ParmSeep.distanceForAll_Parms(
+        subj_fMRI,
+        wmWs,
+        wmParms,
+        NumSimSubjects=len(all_fMRI),
+        distanceSettings=distanceSettings,
+        parmLabel=f"a_{mode}_{conditionToStudy}_random_{random}",
+        fileNameSuffix="_" + subjectName,
+        outFilePath=outFilePath,
+    )
 
-    optimal = {sd: distanceSettings[sd][0].findMinMax(fitting[sd]) for sd in distanceSettings}
+    optimal = {
+        sd: distanceSettings[sd][0].findMinMax(fitting[sd]) for sd in distanceSettings
+    }
     return optimal, fitting
 
 
 # Set the we (G coupling parm) to the best obtained in previous script
-Hopf.setParms({'we': 2.9})
+Hopf.setParms({"we": 0.33})
 
 # Set the weights for all simulations:
-wmWs = np.round(np.arange(-0.08,0.0501,0.001), 4)
+wmWs = np.round(np.arange(-0.0801, 0.0801, 0.001), 4)
 
-def fittingPipeline_heterogeneous(all_fMRI, wmBurden_dict, wmWs):
-
+def fittingPipeline_heterogeneous(all_fMRI, wmh_burden_dict, wmWs):
     best_parameters_dict = {}
     fitting_parameters_dict = {}
 
     for subjectName, subj_ts in all_fMRI.items():
-
-        subj_fMRI = {subjectName:subj_ts}
-        wmBurden_subj = wmBurden_dict[subjectName]
-        best_parameters, fitting_parameters = fittingPipeline_homogeneous(subj_fMRI=subj_fMRI, distanceSettings=distanceSettings, subjectName=subjectName, wms=wmWs, wmBurden = wmBurden_subj)
+        subj_fMRI = {subjectName: subj_ts}
+        wmh_burden_subj = wmh_burden_dict[subjectName]
+        best_parameters, fitting_parameters = fittingPipeline_homogeneous(
+            subj_fMRI, distanceSettings, wmWs, wmh_burden_subj, subjectName
+        )
         best_parameters_dict[subjectName] = best_parameters
         fitting_parameters_dict[subjectName] = fitting_parameters
 
     return best_parameters_dict, fitting_parameters_dict
 
-if not mode == 'heterogeneous_sc':
-    best_parms_dict, fitting_parms_dict = fittingPipeline_heterogeneous(all_fMRI=all_fMRI, wmBurden=wmBurden, wmWs=wmWs)
-
-
+# %%
+if not mode == "heterogeneous_sc":
+    best_parms_dict, fitting_parms_dict = fittingPipeline_heterogeneous(
+        all_fMRI=all_fMRI, wmh_burden=wmh_burden, wmWs=wmWs
+    )
 
     if not random:
-        # open file for writing, "w" 
-        f = open(outFilePath + f"/{mode}_model_best_parameters_dictionary_{conditionToStudy}.pkl","wb")
+        # open file for writing, "w"
+        f = open(
+            outFilePath
+            + f"/{mode}_model_best_parameters_dictionary_{conditionToStudy}.pkl",
+            "wb",
+        )
         # write json object to file
         pickle.dump(best_parms_dict, f)
         # close file
         f.close()
-        # open file for writing, "w" 
-        g = open(outFilePath + f"/{mode}_model_fitting_parameters_dictionary_{conditionToStudy}.pkl","wb")
+        # open file for writing, "w"
+        g = open(
+            outFilePath
+            + f"/{mode}_model_fitting_parameters_dictionary_{conditionToStudy}.pkl",
+            "wb",
+        )
         # write json object to file
         pickle.dump(fitting_parms_dict, g)
         # close file
         g.close()
 
     else:
-
-        # open file for writing, "w" 
-        f = open(outFilePath + f"/random_{mode}_model_best_parameters_dictionary_{conditionToStudy}.pkl","wb")
+        # open file for writing, "w"
+        f = open(
+            outFilePath
+            + f"/random_{mode}_model_best_parameters_dictionary_{conditionToStudy}.pkl",
+            "wb",
+        )
         # write json object to file
         pickle.dump(best_parms_dict, f)
         # close file
         f.close()
-        # open file for writing, "w" 
-        g = open(outFilePath + f"/random_{mode}_model_fitting_parameters_dictionary_{conditionToStudy}.pkl","wb")
+        # open file for writing, "w"
+        g = open(
+            outFilePath
+            + f"/random_{mode}_model_fitting_parameters_dictionary_{conditionToStudy}.pkl",
+            "wb",
+        )
         # write json object to file
         pickle.dump(fitting_parms_dict, g)
         # close file
