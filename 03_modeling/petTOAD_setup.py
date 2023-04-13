@@ -22,6 +22,8 @@ from petTOAD_load import *
 # Begin setup...
 # --------------------------------------------------------------------------
 
+#
+initial_setting = False
 # Subject names and timeseries dictionary
 _, subjs = get_layout_subjs()
 
@@ -105,14 +107,17 @@ subjs = [k for k in all_fMRI.keys()]
 HC_no_WMH, HC_WMH, MCI_no_WMH, MCI_WMH = get_classification(subjs)
 MCI = np.array([j for i in [MCI_WMH, MCI_no_WMH] for j in i]).astype('object')
 all_HC_fMRI = {k: v for k, v in all_fMRI.items() if k in HC_no_WMH}
-baseline_group_ts = np.array([ts for id, ts in all_HC_fMRI.items() if id in HC_no_WMH])
+if initial_setting == True:
+    timeseries = np.array([ts for id, ts in all_HC_fMRI.items() if id in HC_no_WMH])
+else:
+    timeseries = np.array([ts for ts in all_fMRI.values()])
 #%%
 nNodes, Tmax = list(all_HC_fMRI.values())[0].shape
 
 # ------------------------------------------------
 # Hopf.beta = 0.01
 f_diff = filtPowSpectr.filtPowSpetraMultipleSubjects(
-    baseline_group_ts, TR=3.0
+    timeseries, TR=3.0
 )  # baseline_group[0].reshape((1,52,193))
 f_diff[np.where(f_diff == 0)] = np.mean(
     f_diff[np.where(f_diff != 0)]
