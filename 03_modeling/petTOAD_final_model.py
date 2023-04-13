@@ -22,18 +22,17 @@ import pickle
 # ------------------------------------------------
 conditionToStudy = "hc"  # one of 'hc', 'mci', 'all'
 mode = "homogeneous"  # one of 'homogeneous', 'heterogeneous_sc', 'heterogeneous_node'
-random = True  # set to True if you want to shuffle the wmh weights
+random = False  # set to True if you want to shuffle the wmh weights
 
 wmh_dict = get_wmh_load_homogeneous()
 
 if conditionToStudy == "hc":
-    # Use all_HC_fMRI used to calculate the intrinsic frequencies
     all_fMRI = {k: v for k, v in all_fMRI.items() if k in HC_WMH}
     nsubjects = len(all_fMRI)
 
     if mode == "homogeneous":
         wmh_burden_dict = {k: v for k, v in wmh_dict.items() if k in HC_WMH}
-
+        wmh_burden = np.array([wmh_burden_dict.values()])
     elif mode == "heterogeneous_sc":
         sc_dict = {}
         for subj in subjs:
@@ -54,6 +53,7 @@ elif conditionToStudy == "mci":
 
     if mode == "homogeneous":
         wmh_burden_dict = {k: v for k, v in wmh_dict.items() if k in MCI}
+        wmh_burden = np.array([wmh_burden_dict.values()])
 
     elif mode == "heterogeneous_sc":
         sc_dict = {}
@@ -81,9 +81,15 @@ if random:
 
 # Change the file to where you want to save results
 if not random:
-    outFilePath = str(RES_DIR / f"{mode}_model")
+    OUT_DIR = RES_DIR / f"{mode}_model"
+    if not Path.exists(OUT_DIR):
+        Path.mkdir(OUT_DIR)
+    outFilePath = str(OUT_DIR)
 else:
-    outFilePath = str(RES_DIR / f"{mode}_random_model")
+    OUT_DIR = RES_DIR / f"random_{mode}_model"
+    if not Path.exists(OUT_DIR):
+        Path.mkdir(OUT_DIR)
+    outFilePath = str(OUT_DIR)
 
 
 def fittingPipeline_homogeneous(
@@ -98,7 +104,7 @@ def fittingPipeline_homogeneous(
     print("###################################################################\n")
     # Now, evaluate different bifurcation parameters depending on WMH burden
     wmParms = [
-        {"a": base_a_value + (wmW * wmh_burden) + b} for wmW in wmWs
+        {"a": base_a_value + (wmW * wmh_burden) + 0.002} for wmW in wmWs
     ]  # need to set up b
     fitting = ParmSeep.distanceForAll_Parms(
         subj_fMRI,
@@ -121,7 +127,7 @@ def fittingPipeline_homogeneous(
 Hopf.setParms({"we": 0.33})
 
 # Set the weights for all simulations:
-wmWs = np.round(np.arange(-0.0801, 0.0801, 0.001), 4)
+wmWs = np.round(np.arange(-0.101, 0.101, 0.001), 3)
 
 def fittingPipeline_heterogeneous(all_fMRI, wmh_burden_dict, wmWs):
     best_parameters_dict = {}
@@ -141,7 +147,7 @@ def fittingPipeline_heterogeneous(all_fMRI, wmh_burden_dict, wmWs):
 # %%
 if not mode == "heterogeneous_sc":
     best_parms_dict, fitting_parms_dict = fittingPipeline_heterogeneous(
-        all_fMRI=all_fMRI, wmh_burden=wmh_burden, wmWs=wmWs
+        all_fMRI, wmh_burden_dict, wmWs
     )
 
     if not random:
@@ -187,3 +193,5 @@ if not mode == "heterogeneous_sc":
         pickle.dump(fitting_parms_dict, g)
         # close file
         g.close()
+
+# %%

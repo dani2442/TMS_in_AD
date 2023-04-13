@@ -154,6 +154,13 @@ def get_classification(subjs):
 
 
 # %%
+def get_wmh_load_homogeneous():
+    adnimerge = pd.read_csv(RES_DIR / "petTOAD_dataframe.csv")
+    adnimerge["PTID"] = adnimerge["PTID"].str.replace("_", "")
+    adnimerge["WMH_load_subj_space_norm"] = adnimerge['WMH_load_subj_space'] / adnimerge['WMH_load_subj_space'].max()
+    homo_wmh_dict = dict(zip(adnimerge['PTID'], round(adnimerge['WMH_load_subj_space_norm'], 3)))
+    return homo_wmh_dict
+
 def get_sc_wmh_weighted(subj, sc_norm):
     wmh_df = pd.read_csv(LQT_DIR / f"sub-{subj}" / "pct_spared_sc_matrix.csv")
     wmh_df = wmh_df.iloc[:200, 1:201]
@@ -167,7 +174,10 @@ def get_node_damage(subj):
     wmh_damage = wmh_df.iloc[:200, 1:201].mean(axis=0).to_numpy()
     return wmh_damage
 
-
-#%%
-
+def get_wmh_load_homogeneous():
+    adnimerge = pd.read_csv(RES_DIR / "petTOAD_dataframe.csv")
+    adnimerge["PTID"] = adnimerge["PTID"].str.replace("_", "")
+    adnimerge["WMH_load_subj_space_norm"] = adnimerge['WMH_load_subj_space'] / adnimerge['WMH_load_subj_space'].max()
+    homo_wmh_dict = dict(zip(adnimerge['PTID'], round(adnimerge['WMH_load_subj_space_norm'], 3)))
+    return homo_wmh_dict
 # %%

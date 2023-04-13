@@ -102,6 +102,7 @@ for subj in subjs:
 # Now we have different types of preprocessing with XCP_D, choose only one for trying out
 all_fMRI = checking_timeseries(all_fMRI)
 HC_no_WMH, HC_WMH, MCI_no_WMH, MCI_WMH = get_classification(subjs)
+MCI = MCI_WMH + MCI_no_WMH
 all_HC_fMRI = {k: v for k, v in all_fMRI.items() if k in HC_no_WMH}
 baseline_group_ts = np.array([ts for id, ts in all_HC_fMRI.items() if id in HC_no_WMH])
 #%%
