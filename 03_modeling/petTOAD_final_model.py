@@ -1,12 +1,12 @@
 # %%
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""     Homogeneous and heterogeneous Hopf models -- Version 1.1
-Last edit:  2023/03/20
+"""     Homogeneous and heterogeneous Hopf models -- Version 1.2
+Last edit:  2023/04/13
 Authors:    Leone, Riccardo (RL)
-Notes:      - Script for finding the best G on HC
+Notes:      - Script for running the model
             - Release notes:
-                *Refactored
+                *Added correct G and intercept
 To do:      - 
 Comments: 
 
