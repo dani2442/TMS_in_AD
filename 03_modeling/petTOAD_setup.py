@@ -99,8 +99,9 @@ sc_norm = sc * 0.2 / sc.max()
 all_fMRI = {}
 for subj in subjs:
     all_fMRI[subj] = get_method_ts(subj)
-# Now we have different types of preprocessing with XCP_D, choose only one for trying out
 all_fMRI = checking_timeseries(all_fMRI)
+# New subject list overwrites the old one
+subjs = [k for k in all_fMRI.keys()]
 HC_no_WMH, HC_WMH, MCI_no_WMH, MCI_WMH = get_classification(subjs)
 MCI = np.array([j for i in [MCI_WMH, MCI_no_WMH] for j in i]).astype('object')
 all_HC_fMRI = {k: v for k, v in all_fMRI.items() if k in HC_no_WMH}

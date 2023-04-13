@@ -154,10 +154,11 @@ def get_classification(subjs):
 
 
 # %%
-def get_wmh_load_homogeneous():
+def get_wmh_load_homogeneous(subjs):
     adnimerge = pd.read_csv(RES_DIR / "petTOAD_dataframe.csv")
     adnimerge["PTID"] = adnimerge["PTID"].str.replace("_", "")
-    adnimerge["WMH_load_subj_space_norm"] = adnimerge['WMH_load_subj_space'] / adnimerge['WMH_load_subj_space'].max()
+    adnimerge = adnimerge[adnimerge['PTID'].isin(subjs)]
+    adnimerge["WMH_load_subj_space_norm"] = (adnimerge['WMH_load_subj_space'] - adnimerge['WMH_load_subj_space'].min()) / (adnimerge['WMH_load_subj_space'].max() - adnimerge['WMH_load_subj_space'].min())
     homo_wmh_dict = dict(zip(adnimerge['PTID'], round(adnimerge['WMH_load_subj_space_norm'], 3)))
     return homo_wmh_dict
 
@@ -173,11 +174,3 @@ def get_node_damage(subj):
     # Computes the percent damage sustained by each node
     wmh_damage = wmh_df.iloc[:200, 1:201].mean(axis=0).to_numpy()
     return wmh_damage
-
-def get_wmh_load_homogeneous():
-    adnimerge = pd.read_csv(RES_DIR / "petTOAD_dataframe.csv")
-    adnimerge["PTID"] = adnimerge["PTID"].str.replace("_", "")
-    adnimerge["WMH_load_subj_space_norm"] = adnimerge['WMH_load_subj_space'] / adnimerge['WMH_load_subj_space'].max()
-    homo_wmh_dict = dict(zip(adnimerge['PTID'], round(adnimerge['WMH_load_subj_space_norm'], 3)))
-    return homo_wmh_dict
-# %%

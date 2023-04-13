@@ -24,7 +24,7 @@ conditionToStudy = "hc"  # one of 'hc', 'mci', 'all'
 mode = "homogeneous"  # one of 'homogeneous', 'heterogeneous_sc', 'heterogeneous_node'
 random = False  # set to True if you want to shuffle the wmh weights
 
-wmh_dict = get_wmh_load_homogeneous()
+wmh_dict = get_wmh_load_homogeneous(subjs)
 
 if conditionToStudy == "hc":
     all_fMRI = {k: v for k, v in all_fMRI.items() if k in HC_WMH}
@@ -105,7 +105,7 @@ def fittingPipeline_homogeneous(
     # Now, evaluate different bifurcation parameters depending on WMH burden
     wmParms = [
         {"a": base_a_value + (wmW * wmh_burden) + 0.002} for wmW in wmWs
-    ]  # need to set up b
+    ]  
     fitting = ParmSeep.distanceForAll_Parms(
         subj_fMRI,
         wmWs,
@@ -127,7 +127,7 @@ def fittingPipeline_homogeneous(
 Hopf.setParms({"we": 0.33})
 
 # Set the weights for all simulations:
-wmWs = np.round(np.arange(-0.101, 0.101, 0.001), 3)
+wmWs = np.round(np.arange(-0.100, 0.100, 0.0025), 3)
 
 def fittingPipeline_heterogeneous(all_fMRI, wmh_burden_dict, wmWs):
     best_parameters_dict = {}
