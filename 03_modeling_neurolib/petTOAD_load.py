@@ -40,9 +40,6 @@ if not Path.is_dir(RES_DIR):
 
 LQT_DIR = RES_DIR / "LQT"
 
-# Set the output directory
-OUT_DIR = RES_DIR / "Finding_best_G"
-
 
 # %% ~~ Load data ~~ %%#
 def get_layout_subjs():
@@ -92,7 +89,7 @@ def load_norm_aal_sc():
     # Loop through all files that match the pattern "S*_rawcounts.tsv"
     for filename in glob.glob(str(UTL_DIR / "AAL_not_norm" / 'S*_rawcounts.csv')):
         # Load the data from the file using numpy
-        arr = np.genfromtxt(filename)
+        arr = np.genfromtxt(filename, delimiter = ',')
         # Append the loaded data to the list
         sc_list.append(arr)
     sc_mean = np.array(sc_list).mean(axis=0)
