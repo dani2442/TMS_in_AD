@@ -20,23 +20,33 @@ from neurolib.optimize.exploration import BoxSearch
 from neurolib.utils import paths
 from petTOAD_setup import *
 
+# Create a figure dir
+FIG_DIR = RES_DIR / "Figures"
+if not Path.exists(FIG_DIR):
+    Path.mkdir(FIG_DIR)
+
+
 # Set the directory where to save results
 paths.HDF_DIR = str(RES_DIR / "neurolib")
 
-# Choose the group on which to perform analyses
-group = all_HC_fMRI_clean
-group_name = "HC"
-
-# Set if the model has delay
-delay = False
-if not delay:
-    Dmat_dummy = np.zeros_like(sc)
-    Dmat = Dmat_dummy
-else:
-    pass
-
 
 # %% Define functions
+def calc_and_save_fc(ts_dict):
+    """
+    Calculate the empirical FC matrix out of bandpass-filtered timeseries.
+    Args:
+
+    Returns:
+    """
+
+    fcs = []
+    for ts in ts_dict.values():
+        fcs.append(func.fc(ts))
+    avg_fc = np.array(fcs).mean(axis=0)
+    np.savetxt(RES_DIR / "average_FC_HC.csv", avg_fc, delimiter=",")
+    return avg_fc
+
+
 # Define the evaluation function
 def evaluate(traj):
     model = search.getModelFromTraj(traj)
@@ -56,19 +66,27 @@ def evaluate(traj):
     search.saveToPypet(result_dict, traj)
 
 
-def calc_and_save_fc(ts_dict):
-    # Calculate the empirical FC matrix out of bandpass-filtered timeseries
-    fcs = []
-    for ts in ts_dict.values():
-        fcs.append(func.fc(ts))
-    avg_fc = np.array(fcs).mean(axis=0)
-    np.savetxt(RES_DIR / "average_FC_HC.csv", avg_fc, delimiter=",")
-    return avg_fc
+# Choose the group on which to perform analyses
+group = all_HC_fMRI_clean
+group_name = "HC"
 
+avg_fc = calc_and_save_fc(all_HC_fMRI_clean)
 
-# %% Initialize the model
+# Set if the model has delay
+delay = False
+if not delay:
+    Dmat_dummy = np.zeros_like(sc)
+    Dmat = Dmat_dummy
+else:
+    pass
+
+# Initialize the model (neurolib wants a Dmat to initialize the mode, 
+# so we gave it an empty Dmat, which we also later cancel by setting it to None)
 model = PhenoHopfModel(Cmat=sc, Dmat=Dmat_dummy)
-model.params["Dmat"] = None
+if not delay:
+    model.params["Dmat"] = None
+else:
+    pass
 # Empirical fmri is 193 timepoints at TR=3s (9.65 min) + 3 min of initial warm up of the timeseries
 model.params["duration"] = 12.65 * 60 * 1000
 model.params["signalV"] = 0
@@ -78,8 +96,10 @@ model.params["sampling_dt"] = 10.0
 model.params["sigma"] = 0.02
 model.params["a"] = np.ones(90) * (-0.02)
 
+# Define the parametere space to explore
 parameters = ParameterSpace({"K_gl": np.round(np.linspace(1, 4, 2), 3)}, kind="grid")
 
+# Initialize the search
 search = BoxSearch(
     model=model,
     evalFunction=evaluate,
@@ -87,5 +107,10 @@ search = BoxSearch(
     filename="initial_exploration_Gs.hdf",
 )
 
+# %% Run the parameter Search and save results
 search.run(chunkwise=True, chunksize=60000, append=True)
 search.loadResults()
+plt.figure()
+plt.plot(search.dfResults['K_gl'], search.dfResults['fc_corr'])
+plt.savefig(RES_DIR / 'plot_initial_exploration_of_G.png')
+

@@ -9,7 +9,7 @@ Notes:      - Data loader file for neurolib
 To do:      - 
 Comments:   
 
-Sources: filtPowSpectr taken from Gustavo Patow's WholeBrain Code (https://github.com/dagush/WholeBrain) 
+Sources: filtPowSpectr abd BOLDFilters taken from Gustavo Patow's WholeBrain Code (https://github.com/dagush/WholeBrain) 
 """
 # %%
 # Imports
@@ -49,7 +49,7 @@ HC_no_WMH, HC_WMH, MCI_no_WMH, MCI_WMH = get_classification(subjs)
 HC = np.array([j for i in [HC_WMH, HC_no_WMH] for j in i]).astype("object")
 MCI = np.array([j for i in [MCI_WMH, MCI_no_WMH] for j in i]).astype("object")
 
-# When fitting to find the best G and a we want only HC without WMH
+# When fitting to find the best G we want only HC without WMH aka "the super healthy"
 if initial_setting == True:
     all_HC_fMRI_raw = {k: v for k, v in all_fMRI_raw.items() if k in HC_no_WMH}
     all_HC_fMRI_clean = {k: v for k, v in all_fMRI_clean.items() if k in HC_no_WMH}
