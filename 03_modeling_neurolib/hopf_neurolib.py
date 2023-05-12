@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""   Model simulation with neurolib   -- Version 2.0
+"""   Model simulation with neurolib   -- Version 2.1
 Last edit:  2023/05/11
 Authors:    Leone, Riccardo (RL)
 Notes:      - Model simulation of the phenomenological Hopf model with Neurolib
             - Release notes:
-                * Introducing phenomenological Hopf model from personal Github repo
+                * Fine-grained simulation
 To do:      - 
 Comments:   
 
@@ -97,7 +97,7 @@ model.params["sigma"] = 0.02
 model.params["a"] = np.ones(90) * (-0.02)
 
 # Define the parametere space to explore
-parameters = ParameterSpace({"K_gl": np.round(np.linspace(1, 4, 2), 3)}, kind="grid")
+parameters = ParameterSpace({"K_gl": np.round(np.linspace(0.0, 4.0, 200), 3)}, kind="grid")
 
 # Initialize the search
 search = BoxSearch(
