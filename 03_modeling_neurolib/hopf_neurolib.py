@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""   Model simulation with neurolib   -- Version 2.1
+"""   Model simulation with neurolib   -- Version 2.2
 Last edit:  2023/05/11
 Authors:    Leone, Riccardo (RL)
 Notes:      - Model simulation of the phenomenological Hopf model with Neurolib
             - Release notes:
-                * Fine-grained simulation
+                * Added plot labels
 To do:      - 
 Comments:   
 
@@ -83,6 +83,8 @@ def plot_and_save_exploration(df):
     (df['mean_fc_corr'] - 1.96 * df['std_fc_corr']),
     alpha = 0.1
     )
+    plt.ylabel("sFC-eFC correlation")
+    plt.xlabel("G")
     plt.savefig(FIG_DIR / "initial_exploration_Gs.png")
 
 # Choose the group on which to perform analyses
@@ -107,7 +109,7 @@ if not delay:
 else:
     pass
 # Empirical fmri is 193 timepoints at TR=3s (9.65 min) + 3 min of initial warm up of the timeseries
-model.params["duration"] = 2.65 * 60 * 1000
+model.params["duration"] = 12.65 * 60 * 1000
 model.params["signalV"] = 0
 model.params["w"] = 2 * np.pi * f_diff
 model.params["dt"] = 0.1
