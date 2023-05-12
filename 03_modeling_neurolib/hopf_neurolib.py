@@ -50,21 +50,40 @@ def calc_and_save_fc(ts_dict):
 # Define the evaluation function
 def evaluate(traj):
     model = search.getModelFromTraj(traj)
-    model.randomICs()
-    model.run(chunkwise=True, chunksize=60000, append=True)
-    # skip the first 180 secs
-    ts = model.outputs.x[:, 18000::300]
-    t = model.outputs.t[18000::300]
-    ts_filt = BOLDFilters.BandPassFilter(ts)
-    sFC = func.fc(ts_filt)
+    bold_list = []
+    sFC_list = []
+    fc_corr_list = []
+
+    for _ in range(len(all_fMRI_clean)):
+        model.randomICs()
+        model.run(chunkwise=True, chunksize=60000, append=True)
+        # skip the first 180 secs to "warm up" the timeseries
+        ts = model.outputs.x[:, 18000::300]
+        t = model.outputs.t[18000::300]
+        ts_filt = BOLDFilters.BandPassFilter(ts)
+        sFC = func.fc(ts_filt)
+        fc_corr = func.matrix_correlation(sFC, avg_fc)
+        bold_list.append(ts_filt)
+        sFC_list.append(sFC)
+        fc_corr_list.append(fc_corr)
+
     result_dict = {}
-    result_dict["BOLD"] = ts_filt
-    result_dict["FC"] = sFC
+    result_dict["BOLD"] = np.array(bold_list)
+    result_dict["FC"] = np.array(sFC_list)
     result_dict["t"] = t
-    result_dict["fc_corr"] = func.matrix_correlation(sFC, avg_fc)
+    result_dict["fc_corr"] = np.array(fc_corr_list)
 
     search.saveToPypet(result_dict, traj)
 
+def plot_and_save_exploration(df):
+    plt.figure()
+    plt.plot(df['K_gl'], df['mean_fc_corr'])
+    plt.fill_between(df['K_gl'], 
+    (df['mean_fc_corr'] + 1.96 * df['std_fc_corr']),
+    (df['mean_fc_corr'] - 1.96 * df['std_fc_corr']),
+    alpha = 0.1
+    )
+    plt.savefig(FIG_DIR / "initial_exploration_Gs.png")
 
 # Choose the group on which to perform analyses
 group = all_HC_fMRI_clean
@@ -80,7 +99,7 @@ if not delay:
 else:
     pass
 
-# Initialize the model (neurolib wants a Dmat to initialize the mode, 
+# Initialize the model (neurolib wants a Dmat to initialize the mode,
 # so we gave it an empty Dmat, which we also later cancel by setting it to None)
 model = PhenoHopfModel(Cmat=sc, Dmat=Dmat_dummy)
 if not delay:
@@ -88,7 +107,7 @@ if not delay:
 else:
     pass
 # Empirical fmri is 193 timepoints at TR=3s (9.65 min) + 3 min of initial warm up of the timeseries
-model.params["duration"] = 12.65 * 60 * 1000
+model.params["duration"] = 2.65 * 60 * 1000
 model.params["signalV"] = 0
 model.params["w"] = 2 * np.pi * f_diff
 model.params["dt"] = 0.1
@@ -97,7 +116,9 @@ model.params["sigma"] = 0.02
 model.params["a"] = np.ones(90) * (-0.02)
 
 # Define the parametere space to explore
-parameters = ParameterSpace({"K_gl": np.round(np.linspace(0.0, 4.0, 200), 3)}, kind="grid")
+parameters = ParameterSpace(
+    {"K_gl": np.round(np.linspace(0.0, 6.0, 300), 3)}, kind="grid"
+)
 
 # Initialize the search
 search = BoxSearch(
@@ -110,7 +131,8 @@ search = BoxSearch(
 # %% Run the parameter Search and save results
 search.run(chunkwise=True, chunksize=60000, append=True)
 search.loadResults()
-plt.figure()
-plt.plot(search.dfResults['K_gl'], search.dfResults['fc_corr'])
-plt.savefig(RES_DIR / 'plot_initial_exploration_of_G.png')
-
+#%%
+df = search.dfResults
+df['mean_fc_corr'] = df['fc_corr'].apply(lambda x: np.mean(x))
+df['std_fc_corr'] = df['fc_corr'].apply(lambda x: np.std(x))
+plot_and_save_exploration(df)
