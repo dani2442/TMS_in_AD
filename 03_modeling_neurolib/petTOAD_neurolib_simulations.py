@@ -12,8 +12,6 @@ Comments:
 Sources: 
 """
 # %% Initial imports
-import matplotlib.pyplot as plt
-import neurolib.utils.functions as func
 from neurolib.models.pheno_hopf import PhenoHopfModel
 from neurolib.utils.parameterSpace import ParameterSpace
 from neurolib.optimize.exploration import BoxSearch
@@ -86,7 +84,7 @@ parameters = ParameterSpace(
 filename = "exploration_Gs.hdf" 
 
 if __name__ == '__main__':
-    for _ in range(2):
+    for _ in range(50):
         # Initialize the search
         search = BoxSearch(
             model=model,
