@@ -5,7 +5,7 @@ Last edit:  2023/05/11
 Authors:    Leone, Riccardo (RL)
 Notes:      - Model simulation of the phenomenological Hopf model with Neurolib
             - Release notes:
-                * Added plot labels
+                * Changed script to work with following steps
 To do:      - 
 Comments:   
 

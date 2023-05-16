@@ -133,7 +133,7 @@ def fc(ts):
 
 
 # Calculate and save average FC for the group
-def calc_and_save_group_fc(group, save_dir):
+def group_fc(group):
     """Calculates and saves the average functional connectivity matrix of 
     a group of multidimensional timeserieses `ts` (Nxt).
 
@@ -144,16 +144,11 @@ def calc_and_save_group_fc(group, save_dir):
     :return: N x N average functional connectivity matrix
     :rtype: numpy.ndarray
     """
-    n_subj = len(group)
-    N = group[next(iter(group))].shape[0]
-    fc_group = np.zeros([N, N])
-    for _, ts in group.items():
-        fc_group += fc(ts)
-    fc_avg = fc_group / n_subj
-    save_dict = {'avg_fc':fc_avg}
-    filename = str(save_dir / f"avg_FC.mat")
-    sio.savemat(filename, save_dict)
-    return fc_avg
+    fcs = []
+    for ts in group.values():
+        fcs.append(fc(ts))
+    avg_fc = np.array(fcs).mean(axis=0)
+    return avg_fc
 
 
 
@@ -371,6 +366,7 @@ def ts_kolmogorov_phfcd(ts1, ts2, **fcd_kwargs):
 
     return scipy.stats.ks_2samp(phFCD1, phFCD2)[0]
 
+
 def group_fc_dynamics(group, **kwargs):
     fcds1 = []
     phFCDs1 = []
@@ -378,7 +374,7 @@ def group_fc_dynamics(group, **kwargs):
         fcd1 = fcd(ts1, **kwargs)
         fcds1.append(fcd1)
 
-        phFCD1 = phFCD(ts1, **kwargs)
+        phFCD1 = phFCD(ts1)
         phFCDs1.append(phFCD1)
     
     return np.array(fcds1), np.array(phFCDs1)
@@ -406,7 +402,7 @@ def group_kolmogorov(group1, group2, **kwargs):
     return scipy.stats.ks_2samp(fcd1_vals, fcd2_vals), scipy.stats.ks_2samp(phfcds1, phfcds2)
 
 
-def save_group_dynamics(group, save_dir, **kwargs):
+def calc_and_save_group_stats(group, save_dir, **kwargs):
     """Calculates and saves the cumulative fcd and phfcds of a group of subjects.
     Useful for comparing to model simulations
     :param group: group, a dictionary (e.g., {subjs:ts})
@@ -415,92 +411,21 @@ def save_group_dynamics(group, save_dir, **kwargs):
 
     """
     import scipy.io as sio
-    dyn_dict = {}
-    fcd_arr, phFCD_arr = group_fc_dynamics(group, **kwargs)
-    dyn_dict['fcd'] = fcd_arr
-    dyn_dict['phFCD'] = phFCD_arr
-    savename = save_dir / "fc_dyn.mat"
-    sio.savemat(savename, dyn_dict)
+    res_dict = {}
+    print("Calculating group stats...")
+    print("Calculating group FC...")
+    fc = group_fc(group)
+    print("Calculating group dynamics...")
+    fcd_arr, phfcd_arr = group_fc_dynamics(group, **kwargs)
+    flat_fcd_arr = fcd_arr.flatten()
+    flat_phfcd_arr = phfcd_arr.flatten()
+    res_dict['fc'] = fc
+    res_dict['fcd'] = flat_fcd_arr
+    res_dict['phFCD'] = flat_phfcd_arr
+    savename = save_dir / "group_stats.mat"
+    sio.savemat(savename, res_dict)
 
-
-
-# def max_distance_cumulative(data1, data2):
-#     """
-#     From: https://github.com/scipy/scipy/issues/9389
-
-#     Computes the maximal vertical distance between cumulative distributions
-#     (this is the statistic for KS tests). Code mostly copied from
-#     scipy.stats.ks_twosamp
-
-#     Parameters
-#     ----------
-#     data1 : array_like
-#         First data set
-#     data2 : array_like
-#         Second data set
-#     Returns
-#     -------
-#     d : float
-#         Max distance, i.e. value of the Kolmogorov Smirnov test. Sign is + if
-#         the cumulative of data1 < the one of data2 at that location, else -.
-#     x : float
-#         Value of x where maximal distance d is reached.
-#     """
-#     from numpy import ma
-
-#     (data1, data2) = (ma.asarray(data1), ma.asarray(data2))
-#     (n1, n2) = (data1.count(), data2.count())
-#     mix = ma.concatenate((data1.compressed(), data2.compressed()))
-#     mixsort = mix.argsort(kind="mergesort")
-#     csum = np.where(mixsort < n1, 1.0 / n1, -1.0 / n2).cumsum()
-
-#     # Check for ties
-#     if len(np.unique(mix)) < (n1 + n2):
-#         ind = np.r_[np.diff(mix[mixsort]).nonzero()[0], -1]
-#         csum = csum[ind]
-#         mixsort = mixsort[ind]
-
-#     csumabs = ma.abs(csum)
-#     i = csumabs.argmax()
-
-#     d = csum[i]
-#     # mixsort[i] contains the index of mix with the max distance
-#     x = mix[mixsort[i]]
-
-#     return (d, x)
-
-
-# def print_params(params):
-#     """
-#     Helpfer function for printing a subset of the paramters of the aln model.
-#     Todo: This function should not be here, it is too specific for the aln model.
-#     Idea: A model could register "parameters of interest" and be printed with this function.
-#     However, this should be placed in the Model class in any case
-#     """
-#     paramsOfInterest = [
-#         "dt",
-#         "Ke_gl",
-#         "mue_ext_mean",
-#         "mui_ext_mean",
-#         "sigma_ou",
-#         "signalV",
-#         "a",
-#         "b",
-#         "Jee_max",
-#         "Jie_max",
-#         "Jii_max",
-#         "Jei_max",
-#         "cee",
-#         "cie",
-#         "cii",
-#         "cei",
-#         "Ke",
-#         "Ki",
-#         "de",
-#         "di",
-#     ]
-#     for p in paramsOfInterest:
-#         print("params['%s'] = %0.3f" % (p, params[p]))
+    return fc, flat_fcd_arr, flat_phfcd_arr
 
 
 def getPowerSpectrum(activity, dt, maxfr=70, spectrum_windowsize=1.0, normalize=False):
@@ -568,6 +493,20 @@ def getMeanPowerSpectrum(activities, dt, maxfr=70, spectrum_windowsize=1.0, norm
         powers /= np.max(powers)
     return f, powers
 
+
+
+def plot_and_save_exploration(df):
+    plt.figure()
+    plt.plot(df["K_gl"], df["mean_fc_corr"])
+    plt.fill_between(
+        df["K_gl"],
+        (df["mean_fc_corr"] + 1.96 * df["std_fc_corr"]),
+        (df["mean_fc_corr"] - 1.96 * df["std_fc_corr"]),
+        alpha=0.1,
+    )
+    plt.ylabel("sFC-eFC correlation")
+    plt.xlabel("G")
+    plt.savefig(FIG_DIR / "initial_exploration_Gs.png")
 
 
 
