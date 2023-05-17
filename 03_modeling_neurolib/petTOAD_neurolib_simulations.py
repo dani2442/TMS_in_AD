@@ -68,7 +68,7 @@ else:
 model = PhenoHopfModel(Cmat=sc, Dmat=Dmat)
 model.params["Dmat"] = None if not delay else Dmat
 # Empirical fmri is 193 timepoints at TR=3s (9.65 min) + 3 min of initial warm up of the timeseries
-model.params["duration"] = 0.65 * 60 * 1000
+model.params["duration"] = 12.65 * 60 * 1000
 model.params["signalV"] = 0
 model.params["w"] = 2 * np.pi * f_diff
 model.params["dt"] = 0.1
@@ -84,7 +84,7 @@ parameters = ParameterSpace(
 filename = "exploration_Gs.hdf" 
 
 if __name__ == '__main__':
-    for _ in range(50):
+    for _ in range(2):
         # Initialize the search
         search = BoxSearch(
             model=model,

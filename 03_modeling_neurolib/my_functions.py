@@ -411,21 +411,27 @@ def calc_and_save_group_stats(group, save_dir, **kwargs):
 
     """
     import scipy.io as sio
-    res_dict = {}
-    print("Calculating group stats...")
-    print("Calculating group FC...")
-    fc = group_fc(group)
-    print("Calculating group dynamics...")
-    fcd_arr, phfcd_arr = group_fc_dynamics(group, **kwargs)
-    flat_fcd_arr = fcd_arr.flatten()
-    flat_phfcd_arr = phfcd_arr.flatten()
-    res_dict['fc'] = fc
-    res_dict['fcd'] = flat_fcd_arr
-    res_dict['phFCD'] = flat_phfcd_arr
     savename = save_dir / "group_stats.mat"
-    sio.savemat(savename, res_dict)
+    try:
+        m = sio.loadmat(save_dir / savename)
+        fc = m['fc']
+        flat_fcd_arr = m['fcd']
+        flat_phfcd_arr = m['phFCD']
+    except:
+        res_dict = {}
+        print("Calculating group stats...")
+        print("Calculating group FC...")
+        fc = group_fc(group)
+        print("Calculating group dynamics...")
+        fcd_arr, phfcd_arr = group_fc_dynamics(group, **kwargs)
+        flat_fcd_arr = fcd_arr.flatten()
+        flat_phfcd_arr = phfcd_arr.flatten()
+        res_dict['fc'] = fc
+        res_dict['fcd'] = flat_fcd_arr
+        res_dict['phFCD'] = flat_phfcd_arr
+        sio.savemat(savename, res_dict)
 
-    return fc, flat_fcd_arr, flat_phfcd_arr
+    return fc, flat_fcd_arr.squeeze(), flat_phfcd_arr.squeeze()
 
 
 def getPowerSpectrum(activity, dt, maxfr=70, spectrum_windowsize=1.0, normalize=False):

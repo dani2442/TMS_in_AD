@@ -1,4 +1,4 @@
-#%%
+# %%
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """   Gather results of the repeated simulations   -- Version 1.0
@@ -13,68 +13,86 @@ Comments:
 Sources: 
 """
 import matplotlib.pyplot as plt
+import numpy as np
+import pandas as pd
 import neurolib.utils.functions as func
 import petTOAD_neurolib_simulations as sim
+import my_functions as my_func
 from neurolib.utils import pypetUtils as pu
-#%%
 from neurolib.optimize.exploration import BoxSearch
 
 
-#%%%
+def get_bolds_from_trajs(trajs):
+    list_bold = []
+    search = BoxSearch(
+        model=sim.model,
+        evalFunction=sim.evaluate,
+        parameterSpace=sim.parameters,
+        filename=sim.filename,
+    )
+    for traj in trajs:
+        search.loadResults(trajectoryName=traj)
+        bold = search.dfResults["BOLD"]
+        list_bold.append(bold)
+    return np.array(list_bold)
 
-# df = search.dfResults
-# df["mean_fc_corr"] = df["fc_corr"].apply(lambda x: np.mean(x))
-# df["std_fc_corr"] = df["fc_corr"].apply(lambda x: np.std(x))
-# plot_and_save_exploration(df)
 
-# #%%
-# res_df = pd.DataFrame(columns=
-#     [
-#         "K_gl",
-#         "fc_corr_mean",
-#         "fc_corr_std",
-#         "fcd_ks_mean",
-#         "fcd_ks_std",
-#         "phfcd_ks_mean",
-#         "phfcd_ks_std",
-#     ]
-# )
-# fc_corrs = []
-# fcds_all = []
-# fcd_ks = []
-# list_bold = []
+def calculate_results_from_bolds(bold_arr):
+    # Create a new array to store the FC, FCD and phFCD values with the same shape as bold array
+    fc_array = np.empty_like(bold_arr)
+    fcd_array = np.empty_like(bold_arr)
+    phfcd_array = np.empty_like(bold_arr)
 
-#res_df['K_gl'] = search.parameterSpace.K_gl
+    # Iterate over each element in the bold array
+    for i in range(nparms):
+        for j in range(nsim):
+            # Get the current timeseries
+            timeseries = bold_arr[i, j]
+
+            # Perform FC, FCD and phFCD analysis
+            fc_value = func.fc(timeseries)
+            fcd_value = func.fcd(timeseries)
+            triu_ind_fcd = np.triu_indices(fcd_value.shape[0], k=1)
+            fcd_vals = fcd_value[triu_ind_fcd]
+            phfcd_value = my_func.phFCD(timeseries)
+            # Store the FC, FCD, phFCD value in the corresponding position in the arrays
+            fc_array[i, j] = fc_value
+            fcd_array[i, j] = fcd_vals
+            phfcd_array[i, j] = phfcd_value
+    return fc_array, fcd_array, phfcd_array
+
+
+def plot_results_exploration_G():
+    plt.figure()
+    plt.plot(res_df["K_gl"], res_df["fc_pearson"], label="FC")
+    plt.plot(res_df["K_gl"], res_df["fcd_ks"], label="FCD")
+    plt.plot(res_df["K_gl"], res_df["phfcd_ks"], label="phFCD")
+    plt.xlabel("Coupling parameter (G)")
+    plt.ylabel(r"Pearson's $\rho$ / KS-distance")
+    plt.legend()
+    plt.savefig(sim.SIM_DIR_GROUP / "Fitting_G.png")
+
+
+fc, fcd, phfcd = my_func.calc_and_save_group_stats(
+    sim.all_HC_fMRI_clean, sim.SIM_DIR_GROUP
+)
 #%%
-trajs = pu.getTrajectorynamesInFile(f'{sim.paths.HDF_DIR}/{sim.filename}')
-list_bold = []
-search = BoxSearch(
-            model=sim.model,
-            evalFunction=sim.evaluate,
-            parameterSpace=sim.parameters,
-            filename=sim.filename,
-        )
-for traj in trajs:
-    search.loadResults(trajectoryName=traj)
-    bold = search.dfResults['BOLD']
-    list_bold.append(bold)
-bold_arr = np.array(list_bold)
-# Create a new array to store the FCD values with the same shape as timeseries_array
-fc_array = np.empty_like(bold_arr)
-fcd_array = np.empty_like(bold_arr)
-phfcd_array = np.empty_like(bold_arr)
+trajs = pu.getTrajectorynamesInFile(f"{sim.paths.HDF_DIR}/{sim.filename}")
+nsim = len(trajs)
+nparms = len(sim.parameters.K_gl)
+# Better to work nparms x nsims for later storage in pandas
+bold_arr = get_bolds_from_trajs(trajs).T
+fc_array, fcd_array, phfcd_array = calculate_results_from_bolds(bold_arr)
+sim_fc = fc_array.mean(axis=1)
+fc_pearson = [func.matrix_correlation(row_fc, fc) for row_fc in sim_fc]
+fcd_ks = [my_func.matrix_kolmogorov(fcd, np.concatenate(row)) for row in fcd_array]
+phfcd_ks = [
+    my_func.matrix_kolmogorov(phfcd, np.concatenate(row)) for row in phfcd_array
+]
+data = [[sim.parameters.K_gl, fc_pearson, fcd_ks, phfcd_ks]]
+columns = ["K_gl", "fc_pearson", "fcd_ks", "phfcd_ks"]
+res_df = pd.DataFrame(data, columns=columns).explode(columns)
+plot_results_exploration_G()
 
-# Iterate over each element in the timeseries_array
-for i in range(bold_arr.shape[0]):
-    for j in range(bold_arr.shape[1]):
-        # Get the current timeseries
-        timeseries = bold_arr[i, j]
-        
-        # Perform FCD analysis using func.fcd function (replace with the actual function call)
-        fc_value = func.fc(timeseries)
-        fcd_value = func.fcd(timeseries)
-        phfcd_value = my_func.phFCD(timeseries)
-        # Store the FCD value in the corresponding position in the fcd_array
-        fc_array[i, j] = fc_value
-        fcd_array[i, j] = fcd_value
-        phfcd_array[i, j] = phfcd_value
+
+# %%
