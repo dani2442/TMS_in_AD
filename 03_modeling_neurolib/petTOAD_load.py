@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""     Find the best G coupling parameter based on healthy controls -- Version 2.0
-Last edit:  2023/03/27
+"""     Find the best G coupling parameter based on healthy controls -- Version 2.1
+Last edit:  2023/05/20
 Authors:    Leone, Riccardo (RL)
 Notes:      - Data loader file 
             - Release notes:
-                * Changed to AAL atlas
+                * Not setting max = 0.2, because before we had best values around 6...
+                * Now with grop bin Fazekas
 To do:      - 
 Comments:   Current implementation is for the  AAL atlas
 
@@ -93,8 +94,8 @@ def load_norm_aal_sc():
         # Append the loaded data to the list
         sc_list.append(arr)
     sc_mean = np.array(sc_list).mean(axis=0)
-    sc_norm = sc_mean * 0.2 / sc_mean.max()
-    return sc_norm
+    #sc_norm = sc_mean * 0.2 / sc_mean.max()
+    return sc_mean
 
 
 
@@ -105,22 +106,22 @@ def get_classification(subjs):
 
     HC_no_WMH = adnimerge[
         (adnimerge["PTID"].isin(subjs))
-        & ((adnimerge["Group_bin_subj"] == "CN_no_WMH"))
+        & ((adnimerge["Group_bin_Fazekas"] == "CN_no_WMH"))
     ]["PTID"].unique()
 
     HC_WMH = adnimerge[
         (adnimerge["PTID"].isin(subjs))
-        & ((adnimerge["Group_bin_subj"] == "CN_WMH"))
+        & ((adnimerge["Group_bin_Fazekas"] == "CN_WMH"))
     ]["PTID"].unique()
 
     MCI_no_WMH = adnimerge[
         (adnimerge["PTID"].isin(subjs))
-        & ((adnimerge["Group_bin_subj"] == "MCI_no_WMH"))
+        & ((adnimerge["Group_bin_Fazekas"] == "MCI_no_WMH"))
     ]["PTID"].unique()
 
     MCI_WMH = adnimerge[
         (adnimerge["PTID"].isin(subjs))
-        & ((adnimerge["Group_bin_subj"] == "MCI_WMH"))
+        & ((adnimerge["Group_bin_Fazekas"] == "MCI_WMH"))
     ]["PTID"].unique()
 
     return HC_no_WMH, HC_WMH, MCI_no_WMH, MCI_WMH
