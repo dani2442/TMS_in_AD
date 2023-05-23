@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""   Model simulation with neurolib   -- Version 2.2
-Last edit:  2023/05/11
+"""   Model simulation with neurolib   -- Version 1.0
+Last edit:  2023/05/23
 Authors:    Leone, Riccardo (RL)
-Notes:      - Model simulation of the phenomenological Hopf model with Neurolib
+Notes:      - Homogeneous wmh-weighted model simulation of the phenomenological Hopf model with Neurolib
             - Release notes:
-                * Changed script to work with following steps
+                * Initial commit
 To do:      - 
 Comments:   
 
@@ -20,7 +20,7 @@ from neurolib.utils import paths
 from petTOAD_setup import *
 
 # Choose the group on which to perform analyses ("HC_noWMH", "HC_WMH", "MCI_noWMH", "MCI_WMH")
-group_name = "HC_noWMH"
+group_name = "HC_WMH"
 
 SIM_DIR = RES_DIR / "model_simulations"
 if not Path.exists(SIM_DIR):
@@ -84,25 +84,39 @@ model.params["w"] = 2 * np.pi * f_diff
 model.params["dt"] = 0.1
 model.params["sampling_dt"] = 10.0
 model.params["sigma"] = 0.02
-model.params["a"] = np.ones(90) * (-0.02)
+model.params["K_gl"] = 0.000  # Set this to the best parm found!!!!!!!!!!!!!!!!!!!!!!!!1
 
-# Define the parametere space to explore
-parameters = ParameterSpace(
-    {"K_gl": np.round(np.linspace(0.0, 8.0, 288), 3)}, kind="grid"
-)
+ws = np.linspace(-0.1, 0.1, 100)
+bs = np.linspace(-0.1, 0.1, 100)
+
+wmh_dict = get_wmh_load_homogeneous(subjs)
 
 
-filename = "initial_exploration_Gs-max_SC_dot3.hdf"
+# %%
+def define_subject_simulation(subj, ws, bs):
+    WMH = wmh_dict[subj]
+    # Define the parametere space to explore
+    parameters = ParameterSpace(
+        {
+            "a": [-0.02 * w * WMH + b for w in ws for b in bs],
+        },
+        kind="grid",
+    )
+    filename = f"{subj}_homogeneous_model.hdf"
+    return parameters, filename
+
 
 if __name__ == "__main__":
-    for _ in range(50):
-        # Initialize the search
-        search = BoxSearch(
-            model=model,
-            evalFunction=evaluate,
-            parameterSpace=parameters,
-            filename=filename,
-        )
-        search.run(chunkwise=True, chunksize=60000, append=True)
+    for subj in subjs:
+        parameters, filename = define_subject_simulation(subj)
+        for _ in range(50):
+            # Initialize the search
+            search = BoxSearch(
+                model=model,
+                evalFunction=evaluate,
+                parameterSpace=parameters,
+                filename=filename,
+            )
+            search.run(chunkwise=True, chunksize=60000, append=True)
 
 # %%
