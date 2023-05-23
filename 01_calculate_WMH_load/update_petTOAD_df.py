@@ -48,7 +48,6 @@ sel_pts_dummy = pd.merge(sel_pts, wmh_check_final, on = 'PTID')
 sel_pts_dummy["Group_bin"] = np.where(sel_pts_dummy["Group"] == "CN", "CN", "MCI")
 # Merge with WMH lesion load df
 sel_pts_new = pd.merge(sel_pts_dummy, global_WMH_df, on="PTID")
-
 #Calculate the threshold to say that a patient is WMH/no WMH in subj space
 thresh_subj = np.quantile(
     sel_pts_new[sel_pts_new["Group"] == "CN"]["WMH_load_subj_space"], 0.25
@@ -104,3 +103,4 @@ a = [f for f in pt_sel if f not in pt_adni]
 help_df = sel_pts_new[sel_pts_new['PTID'].isin(a)][['PTID', 'EXAMDATE']]
 # Save the list of patients with no ADNIMERGE data
 help_df.to_csv(RES_DIR / 'list_of_patients_with_no_ADNIMERGE_data.csv')
+# %%
