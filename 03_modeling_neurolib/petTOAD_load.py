@@ -1,29 +1,11 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """     Find the best G coupling parameter based on healthy controls -- Version 2.1
-<<<<<<< HEAD
-<<<<<<< HEAD
 Last edit:  2023/03/27
 Authors:    Leone, Riccardo (RL)
 Notes:      - Data loader file 
             - Release notes:
                 * Added disconnectomics and nodal damage
-=======
-Last edit:  2023/05/20
-Authors:    Leone, Riccardo (RL)
-Notes:      - Data loader file 
-            - Release notes:
-                * Not setting max = 0.2, because before we had best values around 6...
-                * Now with grop bin Fazekas
->>>>>>> dacedf6623d86f928ff99cb57ea495339bc9a8bf
-=======
-Last edit:  2023/05/20
-Authors:    Leone, Riccardo (RL)
-Notes:      - Data loader file 
-            - Release notes:
-                * Not setting max = 0.2, because before we had best values around 6...
-                * Now with grop bin Fazekas
->>>>>>> dacedf6623d86f928ff99cb57ea495339bc9a8bf
 To do:      - 
 Comments:   Current implementation is for the  AAL atlas
 
