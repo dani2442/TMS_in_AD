@@ -94,8 +94,8 @@ def load_norm_aal_sc():
         # Append the loaded data to the list
         sc_list.append(arr)
     sc_mean = np.array(sc_list).mean(axis=0)
-    #sc_norm = sc_mean * 0.2 / sc_mean.max()
-    return sc_mean
+    sc_norm = sc_mean * 0.3 / sc_mean.max()
+    return sc_norm
 
 
 

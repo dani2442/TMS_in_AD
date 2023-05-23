@@ -78,13 +78,13 @@ model.params["a"] = np.ones(90) * (-0.02)
 
 # Define the parametere space to explore
 parameters = ParameterSpace(
-    {"K_gl": np.round(np.linspace(0.0, 6.0, 2), 3)}, kind="grid"
+    {"K_gl": np.round(np.linspace(0.0, 8., 288), 3)}, kind="grid"
 )
 
-filename = "exploration_Gs.hdf" 
+filename = "initial_exploration_Gs-max_SC_dot3.hdf" 
 
 if __name__ == '__main__':
-    for _ in range(2):
+    for _ in range(50):
         # Initialize the search
         search = BoxSearch(
             model=model,
