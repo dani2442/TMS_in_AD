@@ -12,6 +12,7 @@ Comments:
 
 Sources: 
 """
+import time
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
@@ -47,7 +48,7 @@ def calculate_results_from_bolds(bold_arr):
     for i in range(nparms):
         for j in range(nsim):
             # Get the current timeseries
-            timeseries = bold_arr[i, j]
+            timeseries = bold_arr[i, j].squeeze()
 
             # Perform FC, FCD and phFCD analysis
             fc_value = func.fc(timeseries)
@@ -70,7 +71,7 @@ def plot_results_exploration_G():
     plt.xlabel("Coupling parameter (G)")
     plt.ylabel(r"Pearson's $\rho$ / KS-distance")
     plt.legend()
-    plt.savefig(sim.SIM_DIR_GROUP / "Fitting_G.png")
+    plt.savefig(sim.SIM_DIR_GROUP / f"{sim.filename}_plot.png")
 
 
 fc, fcd, phfcd = my_func.calc_and_save_group_stats(
@@ -84,15 +85,42 @@ nparms = len(sim.parameters.K_gl)
 bold_arr = get_bolds_from_trajs(trajs).T
 fc_array, fcd_array, phfcd_array = calculate_results_from_bolds(bold_arr)
 sim_fc = fc_array.mean(axis=1)
+<<<<<<< HEAD
+import time
+
 fc_pearson = [func.matrix_correlation(row_fc, fc) for row_fc in sim_fc]
+start_time = time.time()
 fcd_ks = [my_func.matrix_kolmogorov(fcd, np.concatenate(row)) for row in fcd_array]
+end_time = time.time()
+print(f'It took {end_time-start_time} for 2 simulations of fcd')
 phfcd_ks = [
     my_func.matrix_kolmogorov(phfcd, np.concatenate(row)) for row in phfcd_array
 ]
+end_end_time = time.time()
+print(f'It took {end_end_time-end_time} for 2 simulations of phfcd')
+
+=======
+print("Calculating fcs...")
+start_time = time.time()
+fc_pearson = [func.matrix_correlation(row_fc, fc) for row_fc in sim_fc]
+end_time = time.time()
+print(f"It took {round(end_time-start_time, 3)/ 60} mins to process FCs")
+print("Calculating FCDs...")
+fcd_ks = [my_func.matrix_kolmogorov(fcd, np.concatenate(row)) for row in fcd_array]
+end_end_time = time.time()
+print(f"It took {round(end_end_time - end_time, 3) / 60} mins to process FCDs")
+print("Calculating phFCDs...")
+phfcd_ks = [
+    my_func.matrix_kolmogorov(phfcd, np.concatenate(row)) for row in phfcd_array
+]
+real_end_time = time.time()
+print(f"It took {round(real_end_time - end_end_time, 3) / 60} mins to process phFCDs")
+>>>>>>> dacedf6623d86f928ff99cb57ea495339bc9a8bf
 data = [[sim.parameters.K_gl, fc_pearson, fcd_ks, phfcd_ks]]
 columns = ["K_gl", "fc_pearson", "fcd_ks", "phfcd_ks"]
 res_df = pd.DataFrame(data, columns=columns).explode(columns)
 plot_results_exploration_G()
-
+print("Done!")
+print(f"Total run time for the script: {round(real_end_time - start_time, 3) / 60} mins")
 
 # %%

@@ -54,18 +54,17 @@ def evaluate(traj):
     sFC_list = []
     fc_corr_list = []
 
-    for _ in range(len(all_fMRI_clean)):
-        model.randomICs()
-        model.run(chunkwise=True, chunksize=60000, append=True)
-        # skip the first 180 secs to "warm up" the timeseries
-        ts = model.outputs.x[:, 18000::300]
-        t = model.outputs.t[18000::300]
-        ts_filt = BOLDFilters.BandPassFilter(ts)
-        sFC = func.fc(ts_filt)
-        fc_corr = func.matrix_correlation(sFC, avg_fc)
-        bold_list.append(ts_filt)
-        sFC_list.append(sFC)
-        fc_corr_list.append(fc_corr)
+    model.randomICs()
+    model.run(chunkwise=True, chunksize=60000, append=True)
+    # skip the first 180 secs to "warm up" the timeseries
+    ts = model.outputs.x[:, 18000::300]
+    t = model.outputs.t[18000::300]
+    ts_filt = BOLDFilters.BandPassFilter(ts)
+    sFC = func.fc(ts_filt)
+    fc_corr = func.matrix_correlation(sFC, avg_fc)
+    bold_list.append(ts_filt)
+    sFC_list.append(sFC)
+    fc_corr_list.append(fc_corr)
 
     result_dict = {}
     result_dict["BOLD"] = np.array(bold_list)
@@ -119,22 +118,25 @@ model.params["a"] = np.ones(90) * (-0.02)
 
 # Define the parametere space to explore
 parameters = ParameterSpace(
-    {"K_gl": np.round(np.linspace(0.0, 6.0, 300), 3)}, kind="grid"
+    {"K_gl": np.round(np.linspace(0.0, 6.0, 288), 3)}, kind="grid"
 )
 
-# Initialize the search
-search = BoxSearch(
-    model=model,
-    evalFunction=evaluate,
-    parameterSpace=parameters,
-    filename="initial_exploration_Gs.hdf",
-)
 
 # %% Run the parameter Search and save results
-search.run(chunkwise=True, chunksize=60000, append=True)
-search.loadResults()
+for _ in range(50):
+    # Initialize the search
+    search = BoxSearch(
+        model=model,
+        evalFunction=evaluate,
+        parameterSpace=parameters,
+        filename="initial_exploration_Gs.hdf",
+    )
+
+    search.run(chunkwise=True, chunksize=60000, append=True)
+
+#search.loadResults()
 #%%
-df = search.dfResults
-df['mean_fc_corr'] = df['fc_corr'].apply(lambda x: np.mean(x))
-df['std_fc_corr'] = df['fc_corr'].apply(lambda x: np.std(x))
-plot_and_save_exploration(df)
+#df = search.dfResults
+#df['mean_fc_corr'] = df['fc_corr'].apply(lambda x: np.mean(x))
+#df['std_fc_corr'] = df['fc_corr'].apply(lambda x: np.std(x))
+#plot_and_save_exploration(df)

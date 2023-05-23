@@ -15,13 +15,9 @@ Sources: filtPowSpectr abd BOLDFilters taken from Gustavo Patow's WholeBrain Cod
 # Imports
 import numpy as np
 import BOLDFilters as BOLDFilters
-import filteredPowerSpectralDensity as filtPowSpectr
 from scipy import stats
 from petTOAD_load import *
 
-
-# Set initial_setting = True if you want to find e.g. best G on HC
-initial_setting = True
 # Get subjs names
 _, subjs = get_layout_subjs()
 
@@ -39,7 +35,8 @@ all_fMRI_raw = {subj: load_ts_aal(subj) for subj in subjs}
 all_fMRI_raw = check_ts(all_fMRI_raw)
 # Demean, detrend and filter the signal only for subjects with complete data
 all_fMRI_clean = {
-    subj: stats.zscore(BOLDFilters.BandPassFilter(sub_ts), axis = 1) for subj, sub_ts in all_fMRI_raw.items()
+    subj: stats.zscore(BOLDFilters.BandPassFilter(sub_ts), axis=1)
+    for subj, sub_ts in all_fMRI_raw.items()
 }
 # New subject list overwrites the old one
 subjs = [k for k in all_fMRI_clean.keys()]
@@ -48,18 +45,6 @@ HC_no_WMH, HC_WMH, MCI_no_WMH, MCI_WMH = get_classification(subjs)
 # Group HC and MCI
 HC = np.array([j for i in [HC_WMH, HC_no_WMH] for j in i]).astype("object")
 MCI = np.array([j for i in [MCI_WMH, MCI_no_WMH] for j in i]).astype("object")
-
-# When fitting to find the best G we want only HC without WMH aka "the super healthy"
-if initial_setting == True:
-    all_HC_fMRI_raw = {k: v for k, v in all_fMRI_raw.items() if k in HC_no_WMH}
-    all_HC_fMRI_clean = {k: v for k, v in all_fMRI_clean.items() if k in HC_no_WMH}
-    timeseries = np.array([ts for ts in all_HC_fMRI_raw.values()])
-else:
-    timeseries = np.array([ts for ts in all_fMRI_raw.values()])
-# Get the frequencies (narrow bandwidth)
-nNodes, Tmax = list(all_fMRI_raw.values())[0].shape
-f_diff = filtPowSpectr.filtPowSpetraMultipleSubjects(timeseries, TR)
-f_diff[np.where(f_diff == 0)] = np.mean(f_diff[np.where(f_diff != 0)])
 
 print("petTOAD Setup done!")
 

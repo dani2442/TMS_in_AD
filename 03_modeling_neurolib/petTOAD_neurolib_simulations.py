@@ -12,17 +12,17 @@ Comments:
 Sources: 
 """
 # %% Initial imports
+import filteredPowerSpectralDensity as filtPowSpectr
 from neurolib.models.pheno_hopf import PhenoHopfModel
 from neurolib.utils.parameterSpace import ParameterSpace
 from neurolib.optimize.exploration import BoxSearch
 from neurolib.utils import paths
 from petTOAD_setup import *
 
-# Choose the group on which to perform analyses
-group = all_HC_fMRI_clean
+# Choose the group on which to perform analyses ("HC_noWMH", "HC_WMH", "MCI_noWMH", "MCI_WMH")
 group_name = "HC_noWMH"
 
-SIM_DIR = RES_DIR / 'model_simulations'
+SIM_DIR = RES_DIR / "model_simulations"
 if not Path.exists(SIM_DIR):
     Path.mkdir(SIM_DIR)
 
@@ -54,6 +54,13 @@ def evaluate(traj):
 
     search.saveToPypet(result_dict, traj)
 
+# Get the timeseries for the chosen group
+group, timeseries = get_group_ts_for_freqs(group_name, all_fMRI_clean)
+
+# Get the frequencies (narrow bandwidth)
+nNodes, Tmax = list(all_fMRI_raw.values())[0].shape
+f_diff = filtPowSpectr.filtPowSpetraMultipleSubjects(timeseries, TR)
+f_diff[np.where(f_diff == 0)] = np.mean(f_diff[np.where(f_diff != 0)])
 
 # Set if the model has delay
 delay = False
@@ -63,6 +70,7 @@ if not delay:
 else:
     pass
 
+#%%
 # Initialize the model (neurolib wants a Dmat to initialize the mode,
 # so we gave it an empty Dmat, which we also later cancel by setting it to None)
 model = PhenoHopfModel(Cmat=sc, Dmat=Dmat)
@@ -78,13 +86,20 @@ model.params["a"] = np.ones(90) * (-0.02)
 
 # Define the parametere space to explore
 parameters = ParameterSpace(
-    {"K_gl": np.round(np.linspace(0.0, 6.0, 2), 3)}, kind="grid"
+    {"K_gl": np.round(np.linspace(0.0, 8., 288), 3)}, kind="grid"
 )
 
-filename = "exploration_Gs.hdf" 
+<<<<<<< HEAD
+filename = "exploration_Gs.hdf"
+
+if __name__ == "__main__":
+    for _ in range(2):
+=======
+filename = "initial_exploration_Gs-max_SC_dot3.hdf" 
 
 if __name__ == '__main__':
-    for _ in range(2):
+    for _ in range(50):
+>>>>>>> dacedf6623d86f928ff99cb57ea495339bc9a8bf
         # Initialize the search
         search = BoxSearch(
             model=model,
@@ -94,3 +109,4 @@ if __name__ == '__main__':
         )
         search.run(chunkwise=True, chunksize=60000, append=True)
 
+# %%

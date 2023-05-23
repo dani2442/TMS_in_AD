@@ -1,11 +1,20 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""     Find the best G coupling parameter based on healthy controls -- Version 2.0
+"""     Find the best G coupling parameter based on healthy controls -- Version 2.1
+<<<<<<< HEAD
 Last edit:  2023/03/27
 Authors:    Leone, Riccardo (RL)
 Notes:      - Data loader file 
             - Release notes:
-                * Changed to AAL atlas
+                * Added disconnectomics and nodal damage
+=======
+Last edit:  2023/05/20
+Authors:    Leone, Riccardo (RL)
+Notes:      - Data loader file 
+            - Release notes:
+                * Not setting max = 0.2, because before we had best values around 6...
+                * Now with grop bin Fazekas
+>>>>>>> dacedf6623d86f928ff99cb57ea495339bc9a8bf
 To do:      - 
 Comments:   Current implementation is for the  AAL atlas
 
@@ -93,38 +102,61 @@ def load_norm_aal_sc():
         # Append the loaded data to the list
         sc_list.append(arr)
     sc_mean = np.array(sc_list).mean(axis=0)
-    sc_norm = sc_mean * 0.2 / sc_mean.max()
+    sc_norm = sc_mean * 0.3 / sc_mean.max()
     return sc_norm
 
 
 
 def get_classification(subjs):
-
+    global HC_no_WMH, HC_WMH, MCI_no_WMH, MCI_WMH
     adnimerge = pd.read_csv(RES_DIR / "petTOAD_dataframe.csv")
     adnimerge["PTID"] = adnimerge["PTID"].str.replace("_", "")
 
     HC_no_WMH = adnimerge[
         (adnimerge["PTID"].isin(subjs))
-        & ((adnimerge["Group_bin_subj"] == "CN_no_WMH"))
+        & ((adnimerge["Group_bin_Fazekas"] == "CN_no_WMH"))
     ]["PTID"].unique()
 
     HC_WMH = adnimerge[
         (adnimerge["PTID"].isin(subjs))
-        & ((adnimerge["Group_bin_subj"] == "CN_WMH"))
+        & ((adnimerge["Group_bin_Fazekas"] == "CN_WMH"))
     ]["PTID"].unique()
 
     MCI_no_WMH = adnimerge[
         (adnimerge["PTID"].isin(subjs))
-        & ((adnimerge["Group_bin_subj"] == "MCI_no_WMH"))
+        & ((adnimerge["Group_bin_Fazekas"] == "MCI_no_WMH"))
     ]["PTID"].unique()
 
     MCI_WMH = adnimerge[
         (adnimerge["PTID"].isin(subjs))
-        & ((adnimerge["Group_bin_subj"] == "MCI_WMH"))
+        & ((adnimerge["Group_bin_Fazekas"] == "MCI_WMH"))
     ]["PTID"].unique()
 
     return HC_no_WMH, HC_WMH, MCI_no_WMH, MCI_WMH
 
+def get_group_ts_for_freqs(group_name, all_fMRI_clean):
+
+    if group_name == "HC_noWMH":
+        HC_noWMH_fMRI_clean = {k: v for k, v in all_fMRI_clean.items() if k in HC_no_WMH}
+        timeseries = np.array([ts for ts in HC_noWMH_fMRI_clean.values()])
+        group = HC_noWMH_fMRI_clean
+
+    elif group_name == "HC_WMH":
+        HC_WMH_fMRI_clean = {k: v for k, v in all_fMRI_clean.items() if k in HC_WMH}
+        timeseries = np.array([ts for ts in HC_WMH_fMRI_clean.values()])
+        group = HC_WMH_fMRI_clean
+
+    elif group_name == "MCI_noWMH":
+        MCI_noWMH_fMRI_clean = {k: v for k, v in all_fMRI_clean.items() if k in MCI_no_WMH}
+        timeseries = np.array([ts for ts in MCI_noWMH_fMRI_clean.values()])
+        group = MCI_noWMH_fMRI_clean
+
+    elif group_name == "MCI_WMH":
+        MCI_WMH_fMRI_clean = {k: v for k, v in all_fMRI_clean.items() if k in MCI_WMH}
+        timeseries = np.array([ts for ts in MCI_WMH_fMRI_clean.values()])
+        group = MCI_WMH_fMRI_clean
+        
+    return group, timeseries
 
 # %%
 def get_wmh_load_homogeneous(subjs):
