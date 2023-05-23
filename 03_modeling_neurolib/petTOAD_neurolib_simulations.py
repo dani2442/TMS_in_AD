@@ -95,7 +95,9 @@ parameters = ParameterSpace(
 filename = "initial_exploration_Gs-max_SC_dot3.hdf"
 
 if __name__ == "__main__":
-    for _ in range(50):
+    n_sim = 50
+    for i in range(n_sim):
+        print(f"Now performing simulation number {i+1}/{n_sim}...")
         # Initialize the search
         search = BoxSearch(
             model=model,
@@ -104,5 +106,5 @@ if __name__ == "__main__":
             filename=filename,
         )
         search.run(chunkwise=True, chunksize=60000, append=True)
-
+    print(f"Done with simulations for {group}")
 # %%

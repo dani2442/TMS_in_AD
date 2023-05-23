@@ -34,6 +34,13 @@ if not Path.exists(SIM_DIR_GROUP):
 # Set the directory where to save results
 paths.HDF_DIR = str(SIM_DIR_GROUP)
 
+# Get the timeseries for the chosen group
+group, timeseries = get_group_ts_for_freqs(group_name, all_fMRI_clean)
+
+# Get the frequencies (narrow bandwidth)
+nNodes, Tmax = list(all_fMRI_raw.values())[0].shape
+f_diff = filtPowSpectr.filtPowSpetraMultipleSubjects(timeseries, TR)
+f_diff[np.where(f_diff == 0)] = np.mean(f_diff[np.where(f_diff != 0)])
 
 # %% Define functions
 # Define the evaluation function
@@ -78,8 +85,8 @@ model.params["sampling_dt"] = 10.0
 model.params["sigma"] = 0.02
 model.params["K_gl"] = 0.000  # Set this to the best parm found!!!!!!!!!!!!!!!!!!!!!!!!1
 
-ws = np.linspace(-0.1, 0.1, 100)
-bs = np.linspace(-0.1, 0.1, 100)
+ws = np.linspace(-0.1, 0.1, 2)
+bs = np.linspace(-0.1, 0.1, 2)
 
 wmh_dict = get_wmh_load_homogeneous(subjs)
 
@@ -90,7 +97,7 @@ def define_subject_simulation(subj, ws, bs):
     # Define the parametere space to explore
     parameters = ParameterSpace(
         {
-            "a": [-0.02 * w * WMH + b for w in ws for b in bs],
+            "a": [(np.ones(90) * -0.02) * w * WMH + b for w in ws for b in bs],
         },
         kind="grid",
     )
@@ -99,17 +106,12 @@ def define_subject_simulation(subj, ws, bs):
 
 
 if __name__ == "__main__":
-    # Get the timeseries for the chosen group
-    group, timeseries = get_group_ts_for_freqs(group_name, all_fMRI_clean)
-
-    # Get the frequencies (narrow bandwidth)
-    nNodes, Tmax = list(all_fMRI_raw.values())[0].shape
-    f_diff = filtPowSpectr.filtPowSpetraMultipleSubjects(timeseries, TR)
-    f_diff[np.where(f_diff == 0)] = np.mean(f_diff[np.where(f_diff != 0)])
-
-    for subj in subjs:
-        parameters, filename = define_subject_simulation(subj)
-        for _ in range(50):
+    n_sim = 2
+    for j, subj in enumerate(subjs):
+        print(f"Starting simulations for subject: {subj}, ({j + 1}/{len(subjs)})")
+        parameters, filename = define_subject_simulation(subj, ws, bs)
+        for i in range(n_sim):
+            print(f"Starting simulations n°: {i+1}/{n_sim}")
             # Initialize the search
             search = BoxSearch(
                 model=model,
