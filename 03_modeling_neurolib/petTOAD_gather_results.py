@@ -75,7 +75,7 @@ def plot_results_exploration_G():
 
 
 fc, fcd, phfcd = my_func.calc_and_save_group_stats(
-    sim.all_HC_fMRI_clean, sim.SIM_DIR_GROUP
+    sim.group, sim.SIM_DIR_GROUP
 )
 #%%
 trajs = pu.getTrajectorynamesInFile(f"{sim.paths.HDF_DIR}/{sim.filename}")

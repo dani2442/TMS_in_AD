@@ -56,14 +56,6 @@ def evaluate(traj):
     search.saveToPypet(result_dict, traj)
 
 
-# Get the timeseries for the chosen group
-group, timeseries = get_group_ts_for_freqs(group_name, all_fMRI_clean)
-
-# Get the frequencies (narrow bandwidth)
-nNodes, Tmax = list(all_fMRI_raw.values())[0].shape
-f_diff = filtPowSpectr.filtPowSpetraMultipleSubjects(timeseries, TR)
-f_diff[np.where(f_diff == 0)] = np.mean(f_diff[np.where(f_diff != 0)])
-
 # Set if the model has delay
 delay = False
 if not delay:
@@ -107,6 +99,14 @@ def define_subject_simulation(subj, ws, bs):
 
 
 if __name__ == "__main__":
+    # Get the timeseries for the chosen group
+    group, timeseries = get_group_ts_for_freqs(group_name, all_fMRI_clean)
+
+    # Get the frequencies (narrow bandwidth)
+    nNodes, Tmax = list(all_fMRI_raw.values())[0].shape
+    f_diff = filtPowSpectr.filtPowSpetraMultipleSubjects(timeseries, TR)
+    f_diff[np.where(f_diff == 0)] = np.mean(f_diff[np.where(f_diff != 0)])
+
     for subj in subjs:
         parameters, filename = define_subject_simulation(subj)
         for _ in range(50):
