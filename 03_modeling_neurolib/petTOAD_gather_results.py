@@ -86,6 +86,7 @@ bold_arr = get_bolds_from_trajs(trajs).T
 fc_array, fcd_array, phfcd_array = calculate_results_from_bolds(bold_arr)
 sim_fc = fc_array.mean(axis=1)
 <<<<<<< HEAD
+<<<<<<< HEAD
 import time
 
 fc_pearson = [func.matrix_correlation(row_fc, fc) for row_fc in sim_fc]
@@ -100,6 +101,8 @@ end_end_time = time.time()
 print(f'It took {end_end_time-end_time} for 2 simulations of phfcd')
 
 =======
+=======
+>>>>>>> dacedf6623d86f928ff99cb57ea495339bc9a8bf
 print("Calculating fcs...")
 start_time = time.time()
 fc_pearson = [func.matrix_correlation(row_fc, fc) for row_fc in sim_fc]
@@ -115,6 +118,9 @@ phfcd_ks = [
 ]
 real_end_time = time.time()
 print(f"It took {round(real_end_time - end_end_time, 3) / 60} mins to process phFCDs")
+<<<<<<< HEAD
+>>>>>>> dacedf6623d86f928ff99cb57ea495339bc9a8bf
+=======
 >>>>>>> dacedf6623d86f928ff99cb57ea495339bc9a8bf
 data = [[sim.parameters.K_gl, fc_pearson, fcd_ks, phfcd_ks]]
 columns = ["K_gl", "fc_pearson", "fcd_ks", "phfcd_ks"]

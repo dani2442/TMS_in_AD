@@ -89,17 +89,11 @@ parameters = ParameterSpace(
     {"K_gl": np.round(np.linspace(0.0, 8., 288), 3)}, kind="grid"
 )
 
-<<<<<<< HEAD
-filename = "exploration_Gs.hdf"
 
-if __name__ == "__main__":
-    for _ in range(2):
-=======
 filename = "initial_exploration_Gs-max_SC_dot3.hdf" 
 
 if __name__ == '__main__':
     for _ in range(50):
->>>>>>> dacedf6623d86f928ff99cb57ea495339bc9a8bf
         # Initialize the search
         search = BoxSearch(
             model=model,
