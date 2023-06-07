@@ -41,13 +41,43 @@ def evaluate(traj):
     search.saveToPypet(result_dict, traj)
 
 
-def prepare_group_simulation(group_name):
-    # Set the simulation directory for the group
-    SIM_DIR_GROUP = SIM_DIR / group_name
-    # Set the directory where to save results
-    paths.HDF_DIR = str(SIM_DIR_GROUP)
+
+
+short_subjs = HC_WMH[:30]
+short_subjs = np.append(short_subjs, HC_no_WMH[:30])
+short_subjs = np.append(short_subjs, MCI_no_WMH[:30])
+short_subjs = np.append(short_subjs, MCI_WMH[:30])
+
+ws = np.linspace(-0.1, 0.1, 21)
+bs = np.linspace(-0.5, 0.5, 11)
+
+wmh_dict = get_wmh_load_homogeneous(subjs)
+
+def prepare_subject_simulation(subj, ws, bs):
+    WMH = wmh_dict[subj]
+    # Define the parametere space to explore
+    parameters = ParameterSpace(
+        {
+            "a": [(np.ones(90) * -0.02) * w * WMH + b for w in ws for b in bs],
+        },
+        kind="grid",
+    )
+    filename = f"{subj}_homogeneous_model.hdf"
+
+    return parameters, filename
+
+# Set the simulation directory for the group
+EXPL_DIR = RES_DIR / "exploratory"
+if not Path.exists(EXPL_DIR):
+    Path.mkdir(EXPL_DIR)
+# Set the directory where to save results
+paths.HDF_DIR = str(EXPL_DIR)
+
+
+#%%
+if __name__ == "__main__":
     # Get the timeseries for the chosen group
-    group, timeseries = get_group_ts_for_freqs(group_name, all_fMRI_clean)
+    group, timeseries = get_group_ts_for_freqs("HC_noWMH", all_fMRI_clean)
     # Get the frequencies (narrow bandwidth)
     n_subjs, n_nodes, Tmax = timeseries.shape
     f_diff = filtPowSpectr.filtPowSpetraMultipleSubjects(timeseries, TR)
@@ -70,41 +100,12 @@ def prepare_group_simulation(group_name):
     model.params["dt"] = 0.1
     model.params["sampling_dt"] = 10.0
     model.params["sigma"] = 0.02
-    model.params["K_gl"] = 2.5  # Set this to the best G previously found!!!!
-    return n_subjs, n_nodes, model, group
+    model.params["K_gl"] = 1.9  # Set this to the best G previously found!!!!
 
-def prepare_subject_simulation(subj, ws, bs, random=False):
-    WMH = wmh_dict[subj]
-    # Define the parametere space to explore
-    parameters = ParameterSpace(
-        {
-            "a": [(np.ones(90) * -0.02) * w * WMH + b for w in ws for b in bs],
-        },
-        kind="grid",
-    )
-    if not random:
-        filename = f"{subj}_homogeneous_model.hdf"
-    else:
-        filename = f"{subj}_homogeneous_model_random.hdf"
-    return parameters, filename
-
-# Choose the group on which to perform analyses ("HC_noWMH", "HC_WMH", "MCI_noWMH", "MCI_WMH")
-group_list = ["HC_WMH", "MCI_WMH"]
-
-
-ws = np.linspace(-0.1, 0.1, 51)
-bs = np.linspace(-0.05, 0.05, 11)
-
-wmh_dict = get_wmh_load_homogeneous(subjs)
-#%%
-for group_name in group_list:
-    print(f"Now processing group {group_name}.")
-    n_subjs, n_nodes, model, group = prepare_group_simulation(group_name)
-    n_sim = 1
-    group_subjs = group.keys()
-    for j, subj in enumerate(group_subjs):
-        print(f"Starting simulations for subject: {subj}, ({j + 1}/{len(group_subjs)})")
-        parameters, filename = prepare_subject_simulation(subj, ws, bs, random = False)
+    n_sim = 2
+    for j, subj in enumerate(short_subjs):
+        print(f"Starting simulations for subject: {subj}, ({j + 1}/{len(short_subjs)})")
+        parameters, filename = prepare_subject_simulation(subj, ws, bs)
         for i in range(n_sim):
             print(f"Starting simulations n°: {i+1}/{n_sim}")
             #Initialize the search
@@ -115,21 +116,6 @@ for group_name in group_list:
                 filename=filename,
             )
             search.run(chunkwise=True, chunksize=60000, append=True)
-    for j, subj in enumerate(group_subjs):
-            print(f"Starting simulations with shuffled weights for subject: {subj}, ({j + 1}/{len(group_subjs)})")
-
-            parameters, filename = prepare_subject_simulation(subj, ws, bs, random = True)
-            for i in range(n_sim):
-                print(f"Starting simulations n°: {i+1}/{n_sim}")
-                #Initialize the search
-                search = BoxSearch(
-                model=model,
-                evalFunction=evaluate,
-                parameterSpace=parameters,
-                    filename=filename,
-                )
-                search.run(chunkwise=True, chunksize=60000, append=True)
-
 
 
 # %%

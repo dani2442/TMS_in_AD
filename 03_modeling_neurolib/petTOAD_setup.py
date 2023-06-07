@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""   PetTOAD setup for neurolib modeling   -- Version 2.0
-Last edit:  2023/05/09
+"""   PetTOAD setup for neurolib modeling   -- Version 2.1
+Last edit:  2023/05/26
 Authors:    Leone, Riccardo (RL)
 Notes:      - Data loader file for neurolib
             - Release notes:
-                * Fixed for AAL atlas
+                * 
 To do:      - 
 Comments:   
 
@@ -28,7 +28,7 @@ TR = 3.0
 
 # Load SCs, timelines and group classifications
 sc = load_norm_aal_sc()
-# Prevent full synchronization of the model
+n_nodes = sc.shape[0]
 # Create dict to store the "raw" unfiltered ts
 all_fMRI_raw = {subj: load_ts_aal(subj) for subj in subjs}
 # Check that the timeseries do not have regions with all zeros and return only OK subjs
@@ -45,7 +45,6 @@ HC_no_WMH, HC_WMH, MCI_no_WMH, MCI_WMH = get_classification(subjs)
 # Group HC and MCI
 HC = np.array([j for i in [HC_WMH, HC_no_WMH] for j in i]).astype("object")
 MCI = np.array([j for i in [MCI_WMH, MCI_no_WMH] for j in i]).astype("object")
-
 print("petTOAD Setup done!")
 
 # %%

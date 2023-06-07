@@ -1,3 +1,3 @@
 #!/bin/bash
-python petTOAD_neurolib_simulations.py
+python petTOAD_find_best_G.py
 python petTOAD_gather_results.py

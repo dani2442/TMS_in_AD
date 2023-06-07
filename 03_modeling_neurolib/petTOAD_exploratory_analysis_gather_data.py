@@ -17,7 +17,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import neurolib.utils.functions as func
-import petTOAD_find_best_G as sim
+import petTOAD_exploratory_analysis_WMH_groups as sim
 import my_functions as my_func
 from neurolib.utils import pypetUtils as pu
 from neurolib.optimize.exploration import BoxSearch
@@ -41,14 +41,14 @@ def get_bolds_from_trajs(trajs):
 
 def calculate_results_from_bolds(bold_arr):
     # Create a new array to store the FC, FCD and phFCD values with the same shape as bold array
-    fc_array = np.empty_like(bold_arr)
-    fcd_array = np.empty_like(bold_arr)
-    phfcd_array = np.empty_like(bold_arr)
+    fc_array = np.zeros([nsim, nparms, 90, 90])
+    fcd_array = np.zeros([nsim, nparms, 528])
+    phfcd_array = np.zeros([nsim, nparms, 18145])
 
     # Iterate over each element in the bold array
-    for i in range(nparms):
-        for j in range(nsim):
-            print(f"Now calculating results from the {j} simulation for parameter {i}...")
+    for i in range(nsim):
+        for j in range(nparms):
+            print(f"Now calculating results from the {i} simulation for parameter {j}...")
             # Get the current timeseries
             timeseries = bold_arr[i, j].squeeze()
 
@@ -84,19 +84,38 @@ def plot_results_exploration_G():
     plt.savefig(sim.SIM_DIR_GROUP / f"{sim.filename}_plot.png")
 
 
-fc, fcd, phfcd = my_func.calc_and_save_group_stats(
-    sim.group, sim.SIM_DIR_GROUP
-)
+
 #%%
-trajs = pu.getTrajectorynamesInFile(f"{sim.paths.HDF_DIR}/{sim.filename}")
+
+subj = sim.short_subjs[1]
+filename = f"{sim.paths.HDF_DIR}/{subj}_homogeneous_model.hdf"
+trajs = pu.getTrajectorynamesInFile(f"{sim.paths.HDF_DIR}/{subj}_homogeneous_model.hdf")
+big_list = []
+for traj in trajs:
+    traj_list = []
+    tr = pu.loadPypetTrajectory(filename, traj)
+    run_names = tr.f_get_run_names()
+    n_run = len(run_names)
+    ns = range(n_run)
+    for i in ns:
+        r = pu.getRun(i, tr)
+        traj_list.append(r['BOLD'])
+    big_list.append(traj_list) 
+bold_arr = np.array(big_list)
 nsim = len(trajs)
-nparms = len(sim.parameters.K_gl)
-# Better to work nparms x nsims for later storage in pandas
-bold_arr = get_bolds_from_trajs(trajs).T
-#%%
+nparms = len([(np.ones(90) * -0.02) * w * sim.wmh_dict[subj] + b for w in sim.ws for b in sim.bs])
 fc_array, fcd_array, phfcd_array = calculate_results_from_bolds(bold_arr)
-sim_fc = fc_array.mean(axis=1)
 #%%
+timeseries = sim.all_fMRI_clean[subj]
+fc = func.fc(timeseries)
+print("Calculating fcd..")
+fcd = func.fcd(timeseries)
+triu_ind_fcd = np.triu_indices(fcd.shape[0], k=1)
+fcd = fcd[triu_ind_fcd]
+print("Calculating phFCD")
+phfcd = my_func.phFCD(timeseries)
+
+sim_fc = fc_array.mean(axis=0)
 print("Calculating fcs...")
 start_time = time.time()
 fc_pearson = [func.matrix_correlation(row_fc, fc) for row_fc in sim_fc]

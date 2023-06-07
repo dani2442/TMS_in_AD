@@ -10,6 +10,7 @@ To do:      -
 Comments:   Current implementation is for the  AAL atlas
 
 Sources:  Gustavo Patow's WholeBrain Code (https://github.com/dagush/WholeBrain)
+          Skoch et al., Nature Scientific Data, 2022 (for the SC matrix)  
           
 """
 
@@ -40,6 +41,9 @@ if not Path.is_dir(RES_DIR):
 
 LQT_DIR = RES_DIR / "LQT"
 
+SIM_DIR = RES_DIR / "model_simulations"
+if not Path.exists(SIM_DIR):
+    Path.mkdir(SIM_DIR)
 
 # %% ~~ Load data ~~ %%#
 def get_layout_subjs():
@@ -92,7 +96,11 @@ def load_norm_aal_sc():
         # Append the loaded data to the list
         sc_list.append(arr)
     sc_mean = np.array(sc_list).mean(axis=0)
-    sc_norm = sc_mean * 0.3 / sc_mean.max()
+    # In the paper by Skoch et al., they state that since they "do not enforce symmetry in any direct
+    # artificial way, the matrices are not perfectly symmetrical". In modeling we commonly 
+    # symmetrise, so we do the same here.
+    sc_mean_sym = (sc_mean + sc_mean.T) / 2
+    sc_norm = sc_mean_sym / sc_mean_sym.max()
     return sc_norm
 
 

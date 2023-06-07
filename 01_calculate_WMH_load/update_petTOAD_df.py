@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""     Modify ADNIMERGE.csv to update the WMH volumes -- Version 1.0
-Last edit:  2023/03/20
+"""     Modify ADNIMERGE.csv to update the WMH volumes -- Version 1.1
+Last edit:  2023/06/05
 Authors:    Leone, Riccardo (RL)
 Notes:      - Initial release 
             - Release notes:
-                * None
+                * Use Fazekas <= 2
 To do:      - None
 Comments:   
 
@@ -69,7 +69,7 @@ sel_pts_new["Group_bin_mni"] = np.where(
 )
 # Apply a threshold based on Fazekas score and not WMH volume
 sel_pts_new["Group_bin_Fazekas"] = np.where(
-    sel_pts_new["Fazekas_periventricular"] + sel_pts_new["Fazekas_lobar"] < 2,
+    sel_pts_new["Fazekas_periventricular"] + sel_pts_new["Fazekas_lobar"] <= 2,
     sel_pts_new["Group_bin"] + "_no_WMH",
     sel_pts_new["Group_bin"] + "_WMH",
 )

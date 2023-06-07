@@ -19,24 +19,8 @@ from neurolib.optimize.exploration import BoxSearch
 from neurolib.utils import paths
 from petTOAD_setup import *
 
-# Choose the group on which to perform analyses ("HC_noWMH", "HC_WMH", "MCI_noWMH", "MCI_WMH")
-group_name = "HC_noWMH"
 
-SIM_DIR = RES_DIR / "model_simulations"
-if not Path.exists(SIM_DIR):
-    Path.mkdir(SIM_DIR)
-
-# Create the results dir for the group
-SIM_DIR_GROUP = SIM_DIR / group_name
-if not Path.exists(SIM_DIR_GROUP):
-    Path.mkdir(SIM_DIR_GROUP)
-
-# Set the directory where to save results
-paths.HDF_DIR = str(SIM_DIR_GROUP)
-
-
-# %% Define functions
-# Define the evaluation function
+# Define the evaluation function for the model
 def evaluate(traj):
     model = search.getModelFromTraj(traj)
     bold_list = []
@@ -56,15 +40,23 @@ def evaluate(traj):
     search.saveToPypet(result_dict, traj)
 
 
+# Choose the group on which to perform analyses ("HC_noWMH", "HC_WMH", "MCI_noWMH", "MCI_WMH")
+group_name = "HC_noWMH"
+
+# Create the results dir for the group
+SIM_DIR_GROUP = SIM_DIR / group_name
+if not Path.exists(SIM_DIR_GROUP):
+    Path.mkdir(SIM_DIR_GROUP)
+
+# Set the directory where to save results
+paths.HDF_DIR = str(SIM_DIR_GROUP)
+
 # Get the timeseries for the chosen group
 group, timeseries = get_group_ts_for_freqs(group_name, all_fMRI_clean)
-
-# Get the frequencies (narrow bandwidth)
-nNodes, Tmax = list(all_fMRI_raw.values())[0].shape
+# Get the frequencies (narrow bandwidth) and set the model frequencies
 f_diff = filtPowSpectr.filtPowSpetraMultipleSubjects(timeseries, TR)
 f_diff[np.where(f_diff == 0)] = np.mean(f_diff[np.where(f_diff != 0)])
 
-# Set if the model has delay
 delay = False
 if not delay:
     Dmat_dummy = np.zeros_like(sc)
@@ -72,7 +64,6 @@ if not delay:
 else:
     pass
 
-# %%
 # Initialize the model (neurolib wants a Dmat to initialize the mode,
 # so we gave it an empty Dmat, which we also later cancel by setting it to None)
 model = PhenoHopfModel(Cmat=sc, Dmat=Dmat)
@@ -80,22 +71,20 @@ model.params["Dmat"] = None if not delay else Dmat
 # Empirical fmri is 193 timepoints at TR=3s (9.65 min) + 3 min of initial warm up of the timeseries
 model.params["duration"] = 12.65 * 60 * 1000
 model.params["signalV"] = 0
-model.params["w"] = 2 * np.pi * f_diff
 model.params["dt"] = 0.1
 model.params["sampling_dt"] = 10.0
 model.params["sigma"] = 0.02
-model.params["a"] = np.ones(90) * (-0.02)
-
-# Define the parametere space to explore
+model.params["w"] = 2 * np.pi * f_diff
+model.params["a"] = np.ones(n_nodes) * (-0.02)
+# Define the parameters space to explore for G (K_gl)
 parameters = ParameterSpace(
-    {"K_gl": np.round(np.linspace(0.0, 8.0, 288), 3)}, kind="grid"
+    {"K_gl": np.round(np.linspace(0.0, 3.50, 176), 2)}, kind="grid"
 )
 
 
-filename = "initial_exploration_Gs-max_SC_dot3.hdf"
-
+filename = "initial_exploration_Gs.hdf"
 if __name__ == "__main__":
-    n_sim = 50
+    n_sim = len(group)
     for i in range(n_sim):
         print(f"Now performing simulation number {i+1}/{n_sim}...")
         # Initialize the search
