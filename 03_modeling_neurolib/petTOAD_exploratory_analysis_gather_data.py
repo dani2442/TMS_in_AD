@@ -19,6 +19,7 @@ import pandas as pd
 import neurolib.utils.functions as func
 import petTOAD_exploratory_analysis_WMH_groups as sim
 import my_functions as my_func
+import seaborn as sns
 from neurolib.utils import pypetUtils as pu
 from neurolib.optimize.exploration import BoxSearch
 
@@ -73,70 +74,76 @@ def calculate_results_from_bolds(bold_arr):
     return fc_array, fcd_array, phfcd_array
 
 
-def plot_results_exploration_G():
-    plt.figure()
-    plt.plot(res_df["K_gl"], res_df["fc_pearson"], label="FC")
-    plt.plot(res_df["K_gl"], res_df["fcd_ks"], label="FCD")
-    plt.plot(res_df["K_gl"], res_df["phfcd_ks"], label="phFCD")
-    plt.xlabel("Coupling parameter (G)")
-    plt.ylabel(r"Pearson's $\rho$ / KS-distance")
-    plt.legend()
-    plt.savefig(sim.SIM_DIR_GROUP / f"{sim.filename}_plot.png")
+def save_plot_results(res_df):
+    table_fc = pd.pivot_table(res_df, values='fc_pearson', index='b', columns='w')
+    table_fcd = pd.pivot_table(res_df, values='fcd_ks', index='b', columns='w')
+    table_phfcd = pd.pivot_table(res_df, values='phfcd_ks', index='b', columns='w')
+    plt.figure(figsize = (6,24))
+    plt.subplot(311)
+    sns.heatmap(table_fc.astype(float))
+    plt.title("FC")
+    plt.subplot(312)
+    sns.heatmap(table_fcd.astype(float))
+    plt.title("FCD")
+    plt.subplot(313)
+    sns.heatmap(table_phfcd.astype(float))
+    plt.title("phFCD")
+    plt.savefig(sim.EXPL_DIR / f"sub-{subj}_results_heatmap.png")
 
 
 
 #%%
 
-subj = sim.short_subjs[1]
-filename = f"{sim.paths.HDF_DIR}/{subj}_homogeneous_model.hdf"
-trajs = pu.getTrajectorynamesInFile(f"{sim.paths.HDF_DIR}/{subj}_homogeneous_model.hdf")
-big_list = []
-for traj in trajs:
-    traj_list = []
-    tr = pu.loadPypetTrajectory(filename, traj)
-    run_names = tr.f_get_run_names()
-    n_run = len(run_names)
-    ns = range(n_run)
-    for i in ns:
-        r = pu.getRun(i, tr)
-        traj_list.append(r['BOLD'])
-    big_list.append(traj_list) 
-bold_arr = np.array(big_list)
-nsim = len(trajs)
-nparms = len([(np.ones(90) * -0.02) * w * sim.wmh_dict[subj] + b for w in sim.ws for b in sim.bs])
-fc_array, fcd_array, phfcd_array = calculate_results_from_bolds(bold_arr)
-#%%
-timeseries = sim.all_fMRI_clean[subj]
-fc = func.fc(timeseries)
-print("Calculating fcd..")
-fcd = func.fcd(timeseries)
-triu_ind_fcd = np.triu_indices(fcd.shape[0], k=1)
-fcd = fcd[triu_ind_fcd]
-print("Calculating phFCD")
-phfcd = my_func.phFCD(timeseries)
+for subj in sim.short_subjs[2:]:
+    filename = f"{sim.paths.HDF_DIR}/{subj}_homogeneous_model.hdf"
+    trajs = pu.getTrajectorynamesInFile(f"{sim.paths.HDF_DIR}/{subj}_homogeneous_model.hdf")
+    big_list = []
+    for traj in trajs:
+        traj_list = []
+        tr = pu.loadPypetTrajectory(filename, traj)
+        run_names = tr.f_get_run_names()
+        n_run = len(run_names)
+        ns = range(n_run)
+        for i in ns:
+            r = pu.getRun(i, tr)
+            traj_list.append(r['BOLD'])
 
-sim_fc = fc_array.mean(axis=0)
-print("Calculating fcs...")
-start_time = time.time()
-fc_pearson = [func.matrix_correlation(row_fc, fc) for row_fc in sim_fc]
-end_time = time.time()
-print(f"It took {round(end_time-start_time, 3)/ 60} mins to process FCs")
-print("Calculating FCDs...")
-fcd_ks = [my_func.matrix_kolmogorov(fcd, np.concatenate(row)) for row in fcd_array]
-end_end_time = time.time()
-print(f"It took {round(end_end_time - end_time, 3) / 60} mins to process FCDs")
-print("Calculating phFCDs...")
-phfcd_ks = [
-    my_func.matrix_kolmogorov(phfcd, np.concatenate(row)) for row in phfcd_array
-]
-real_end_time = time.time()
-print(f"It took {round(real_end_time - end_end_time, 3) / 60} mins to process phFCDs")
-data = [[sim.parameters.K_gl, fc_pearson, fcd_ks, phfcd_ks]]
-columns = ["K_gl", "fc_pearson", "fcd_ks", "phfcd_ks"]
-res_df = pd.DataFrame(data, columns=columns).explode(columns)
-res_df.to_csv(sim.SIM_DIR_GROUP / f"df_results_{sim.filename}.csv")
-plot_results_exploration_G()
-print("Done!")
-print(f"Total run time for the script: {round(real_end_time - start_time, 3) / 60} mins")
+        big_list.append(traj_list) 
+    bold_arr = np.array(big_list)
+    nsim = len(trajs)
+    nparms = len([(np.ones(90) * -0.02) * w * sim.wmh_dict[subj] + b for w in sim.ws for b in sim.bs])
+    fc_array, fcd_array, phfcd_array = calculate_results_from_bolds(bold_arr)
+    timeseries = sim.all_fMRI_clean[subj]
+    fc = func.fc(timeseries)
+    print("Calculating fcd..")
+    fcd = func.fcd(timeseries)
+    triu_ind_fcd = np.triu_indices(fcd.shape[0], k=1)
+    fcd = fcd[triu_ind_fcd]
+    print("Calculating phFCD")
+    phfcd = my_func.phFCD(timeseries)
+    # Get the average fc across the n simulations
+    sim_fc = fc_array.mean(axis=0)
+    print("Calculating fcs correlations...")
+    fc_pearson = [func.matrix_correlation(row_fc, fc) for row_fc in sim_fc]
+    print("Calculating FCDs...")
+    fcd_ks = []
+    for row in fcd_array:
+        row_ks = [my_func.matrix_kolmogorov(fcd, sim_fcd) for sim_fcd in row]
+        fcd_ks.append(row_ks)
+        fcd_ks_arr = np.array(fcd_ks)
+    fcd_ks = fcd_ks_arr.mean(axis=0)
+    print("Calculating phFCDs...")
+    phfcd_ks = []
+    for row in fcd_array:
+        row_phfcd_ks = [my_func.matrix_kolmogorov(phfcd, sim_phfcd) for sim_phfcd in row]
+        phfcd_ks.append(row_ks)
+        phfcd_ks_arr = np.array(phfcd_ks)
+    phfcd_ks = phfcd_ks_arr.mean(axis=0)
 
-# %%
+    data = [[[(round(b,3), round(w,3)) for w in sim.ws for b in sim.bs], fc_pearson, fcd_ks, phfcd_ks]]
+    columns = ["b_w", "fc_pearson", "fcd_ks", "phfcd_ks"]
+    res_df = pd.DataFrame(data, columns=columns).explode(columns)
+    res_df['b'], res_df['w'] = zip(*res_df.b_w)
+    res_df = res_df.drop(columns=['b_w'])
+    res_df.to_csv(sim.EXPL_DIR / f"sub-{subj}_df_results_initial_exploration_wmh.csv")
+    save_plot_results(res_df)
