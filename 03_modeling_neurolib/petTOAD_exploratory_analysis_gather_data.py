@@ -23,7 +23,7 @@ import seaborn as sns
 from neurolib.utils import pypetUtils as pu
 from neurolib.optimize.exploration import BoxSearch
 
-
+#%%
 def get_bolds_from_trajs(trajs):
     list_bold = []
     search = BoxSearch(
@@ -94,7 +94,8 @@ def save_plot_results(res_df):
 
 #%%
 
-for subj in sim.short_subjs[2:]:
+for subj_n, subj in enumerate(sim.short_subjs):
+    print(f"Now processing subject {subj} ({subj_n + 1} / {len(sim.short_subjs) - 2})")
     filename = f"{sim.paths.HDF_DIR}/{subj}_homogeneous_model.hdf"
     trajs = pu.getTrajectorynamesInFile(f"{sim.paths.HDF_DIR}/{subj}_homogeneous_model.hdf")
     big_list = []

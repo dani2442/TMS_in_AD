@@ -73,9 +73,9 @@ def main():
         f_diff, n_subjs, n_nodes = get_group_freqs(
             group_name
         )
-        filename = f"{group_name}_with_best_G"
+        filename = f"{group_name}_with_best_G.hdf"
         group_data[group_name] = SIM_DIR_GROUP / filename
-        n_sim = n_subjs
+        n_sim = 2
         
         model.params["w"] = 2 * np.pi * f_diff
         # Define the group-specific simulations
@@ -126,9 +126,9 @@ model.params["sampling_dt"] = 10.0
 model.params["sigma"] = 0.02
 
 
-a_MCI = [np.ones(n_nodes) * a for a in np.round(np.arange(-0.1, 0.1, 0.001), 3)]
+a_MCI = [np.ones(n_nodes) * a for a in np.round(np.arange(-0.15, 0.05, 0.025), 3)]
 a_WMH = [np.ones(n_nodes) * -0.02]
-K_gl = [1.9]
+K_gl = [2.]
 
 
 if __name__ == "__main__":

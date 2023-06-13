@@ -80,12 +80,13 @@ def filtPowSpetraMultipleSubjects(signal, TR):
         for s in range(nSubjects):
             print(f'filtPowSpectraMultipleSubjects: subject {s+1} (of {nSubjects})')
             PowSpect_filt_narrow[s] = filtPowSpetra(signal[s,:,:], TR).T
+            print(PowSpect_filt_narrow)
         Power_Areas_filt_narrow_unsmoothed = np.mean(PowSpect_filt_narrow, axis=0).T
     Power_Areas_filt_narrow_smoothed = np.zeros_like(Power_Areas_filt_narrow_unsmoothed)
     Ts = Tmax * TR
     freqs = np.arange(0,Tmax/2-1)/Ts
     for seed in np.arange(nNodes):
         Power_Areas_filt_narrow_smoothed[:,seed] = gaussfilt(freqs, Power_Areas_filt_narrow_unsmoothed[:,seed], 0.01)
-    idxFreqOfMaxPwr = np.argmax(Power_Areas_filt_narrow_smoothed, axis=0)
+    idxFreqOfMaxPwr = np.argmax(Power_Areas_filt_narrow_smoothed, axis=1)
     f_diff = freqs[idxFreqOfMaxPwr]
     return f_diff

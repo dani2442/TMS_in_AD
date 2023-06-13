@@ -48,8 +48,8 @@ short_subjs = np.append(short_subjs, HC_no_WMH[:30])
 short_subjs = np.append(short_subjs, MCI_no_WMH[:30])
 short_subjs = np.append(short_subjs, MCI_WMH[:30])
 
-ws = np.linspace(-0.1, 0.1, 21)
-bs = np.linspace(-0.5, 0.5, 11)
+ws = np.linspace(-0.5, 0.5, 31)
+bs = np.linspace(0, 0.1, 5)
 
 wmh_dict = get_wmh_load_homogeneous(subjs)
 
