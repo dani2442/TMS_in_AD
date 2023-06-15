@@ -1,4 +1,4 @@
 #!/bin/bash
 python petTOAD_exploratory_analysis_WMH_groups.py
-python petTOAD_analysis_gather_data.py
-python petTOAD_analysis_evaluate_wmh_groups.py
+python petTOAD_exploratory_analysis_gather_data.py
+python petTOAD_exploratory_analysis_evaluate_wmh_groups.py
