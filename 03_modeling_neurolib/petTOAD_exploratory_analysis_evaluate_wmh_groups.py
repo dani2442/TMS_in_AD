@@ -4,7 +4,7 @@
 """   Gather results of the repeated simulations   -- Version 1.0
 Last edit:  2023/06/12
 Authors:    Leone, Riccardo (RL)
-Notes:      - Evaluate the different combinations of b and 2 
+Notes:      - Evaluate the different combinations of b and w
             - Release notes:
                 * Initial release
 To do:      - 
@@ -19,33 +19,55 @@ import seaborn as sns
 from petTOAD_setup import *
 
 #%%
-EXPL_DIR = RES_DIR / "exploratory"
+EXPL_DIR = RES_DIR / "exploratory_first_round"
 EXPL_FIG_DIR = EXPL_DIR / "Figures"
 if not Path.exists(EXPL_FIG_DIR):
     Path.mkdir(EXPL_FIG_DIR)
 
+#%% Define functions
+def annotate_star(tbl):
+    star = tbl.where(tbl == tbl.values.max())
+    star = star.replace({np.nan: ""})
+    star = star.replace({tbl.values.max(): '*'})
+    return star
+
 def save_plot_results(res_df, group):
     # Convert the result df into a pivot table so to plot heatmap
-    table_fc = pd.pivot_table(res_df, values='fc_pearson', index='b', columns='w')
-    table_fcd = pd.pivot_table(res_df, values='fcd_ks', index='b', columns='w')
-    table_phfcd = pd.pivot_table(res_df, values='phfcd_ks', index='b', columns='w')
+    table_fc = pd.pivot_table(res_df, values='fc_pearson', index='b', columns='w').iloc[5:].astype(float)
+    table_fcd = pd.pivot_table(res_df, values='fcd_ks', index='b', columns='w').iloc[5:].astype(float)
+    table_phfcd = pd.pivot_table(res_df, values='phfcd_ks', index='b', columns='w').iloc[5:].astype(float)
     # Create a composite score by summing up the single model fits
     table_sum = table_fc + table_fcd + table_phfcd
-    plt.figure(figsize = (18,6))
-    plt.subplot(131)
-    sns.heatmap(table_fc.astype(float))
-    plt.title(f"FC {group}")
-    plt.subplot(132)
-    sns.heatmap(table_fcd.astype(float))
-    plt.title(f"FCD {group}")
-    plt.subplot(133)
-    sns.heatmap(table_phfcd.astype(float))
-    plt.title(f"phFCD {group}")
+
+    # Create figure
+    fig, axs = plt.subplots(2,2, figsize = (14,14))
+    sns.heatmap(ax = axs[0,0],
+                data = table_fc,
+                annot = annotate_star(table_fc),
+                fmt = '', 
+                annot_kws={"size": 10})
+    axs[0,0].set_title(f"FC {group}")
+
+    sns.heatmap(ax = axs[0,1],
+                data = table_fcd,
+                annot = annotate_star(table_fcd),
+                fmt = '', 
+                annot_kws={"size": 10})
+    axs[0,1].set_title(f"FCD {group}")
+
+    sns.heatmap(ax = axs[1, 0],
+                data = table_phfcd, 
+                annot = annotate_star(table_phfcd),
+                fmt = '', 
+                annot_kws={"size": 10})
+    axs[1,0].set_title(f"phFCD {group}")
+    sns.heatmap(ax = axs[1,1],
+                data = table_sum, 
+                annot = annotate_star(table_sum),
+                fmt = '', 
+                annot_kws={"size": 10})
+    axs[1,1].set_title(f"Sum of model fits {group}")
     plt.savefig(EXPL_DIR / f"{group}_results_heatmap.png")
-    plt.figure(figsize = (6,6))
-    sns.heatmap(table_sum.astype(float))
-    plt.title(f"{group} sum of model fits")
-    plt.savefig(EXPL_DIR / f"{group}_summ_heatmap.png")
 
 
 # Same list as the exploratory simulations
@@ -59,7 +81,7 @@ short_subjs = np.append(short_subjs, MCI_WMH[:30])
 wmh_dict = get_wmh_load_homogeneous(short_subjs)
 # Create a overall df and populate it with single subject results
 big_df = pd.DataFrame()
-for subj in short_subjs:
+for subj in short_subjs[2:]:
     res_df = pd.read_csv(EXPL_DIR / f"sub-{subj}_df_results_initial_exploration_wmh.csv", index_col=0)
     res_df['sub_name'] = subj
     res_df['wmh_load'] = wmh_dict[subj]
@@ -158,3 +180,6 @@ mci_wmh_grouped = mci_wmh_df.drop(columns=["sub_name"]).groupby(["b", "w"]).mean
 save_plot_results(mci_wmh_grouped, "mci_wmh_1q")
 
 # %%
+
+
+

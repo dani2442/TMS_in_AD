@@ -76,9 +76,9 @@ def save_plot_results(res_df):
 #%%
 group_names_dict = pd.read_csv(RES_DIR / "group_names_for_best_G.csv", index_col=0).to_dict()['0']
 # I am running on windows, so overwrite for now..
-# group_names_dict = {'MCI_noWMH': 'U:\\petTOAD\\results\\model_simulations\\MCI_noWMH\\MCI_noWMH_with_best_G.hdf',
-#                     'HC_WMH': 'U:\petTOAD\\results\\model_simulations\\HC_WMH\\HC_WMH_with_best_G.hdf',
-#                     'MCI_WMH': 'U:\petTOAD\\results\\model_simulations\\MCI_WMH\\MCI_WMH_with_best_G.hdf'}
+group_names_dict = {'MCI_noWMH': 'U:\\petTOAD\\results\\model_simulations\\MCI_noWMH\\MCI_noWMH_with_best_G.hdf',
+                    'HC_WMH': 'U:\petTOAD\\results\\model_simulations\\HC_WMH\\HC_WMH_with_best_G.hdf',
+                    'MCI_WMH': 'U:\petTOAD\\results\\model_simulations\\MCI_WMH\\MCI_WMH_with_best_G.hdf'}
 #%%
 
 print("Now processing group MCI no WMH...")
@@ -103,30 +103,42 @@ fc_array, fcd_array, phfcd_array = calculate_results_from_bolds(bold_arr)
 
 #%%
 EXPL_DIR = RES_DIR / "exploratory"
-for group_name in ['HC_WMH', 'MCI_WMH']:
+list_group = ['HC_WMH', 'MCI_WMH']
+for group_name in list_group:
     print(f"Now processing group {group_name}...")
+    # Get the names of the trajectories in the file stored with neurolib
     trajs = pu.getTrajectorynamesInFile(group_names_dict[group_name])
+    # Create a big list to accumulate results from all the trajectories
     big_list = []
+    # Loop through each trajectory
     for traj in trajs:
+        # Create list to accumulate results of this trajectory
         traj_list = []
+        # Load the full trajectory comprising many runs
         tr = pu.loadPypetTrajectory(group_names_dict[group_name], traj)
+        # Get the list of run names
         run_names = tr.f_get_run_names()
+        # Get the number of total runs
         n_run = len(run_names)
+        # Although the trajectories are called "run_000001", pu.getRun works with just the integere (e.g., 1)
         ns = range(n_run)
+        # Loop through all the results and accumulate them into the list.
         for i in ns:
             r = pu.getRun(i, tr)
             traj_list.append(r['BOLD'])
-
+        # Append this trajectory results to the big list of all trajectories
         big_list.append(traj_list) 
-    bold_arr = np.array(big_list)
-    bold_arr = bold_arr.squeeze()
+    # Conver to array and squeeze
+    bold_arr = np.array(big_list).squeeze()
     group, timeseries = get_group_ts_for_freqs(group_name, all_fMRI_clean)
+    # Calculate group results
     fc, fcd, phfcd = my_func.calc_and_save_group_stats(group, EXPL_DIR / group_name)
+    # Starts with simulated vs. empirical comparisons.
+    print("Calculating FCs comparison")
     fc_pearson = [func.matrix_correlation(func.fc(row_fc), fc) for row_fc in bold_arr]
-
-    print("Calculating FCDs...")
+    print("Calculating FCDs KS...")
     fcd_ks = [my_func.matrix_kolmogorov(fcd, np.concatenate(my_func.fcd(row))) for row in fcd_array]
-    print("Calculating phFCDs...")
+    print("Calculating phFCDs KS...")
     phfcd_ks = [
         my_func.matrix_kolmogorov(phfcd, np.concatenate(func.phfcd(row))) for row in phfcd_array
     ]

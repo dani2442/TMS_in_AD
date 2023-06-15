@@ -128,7 +128,7 @@ model.params["sigma"] = 0.02
 
 a_MCI = [np.ones(n_nodes) * a for a in np.round(np.arange(-0.15, 0.05, 0.025), 3)]
 a_WMH = [np.ones(n_nodes) * -0.02]
-K_gl = [2.]
+K_gl = [2.5]
 
 
 if __name__ == "__main__":
