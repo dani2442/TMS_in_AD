@@ -41,7 +41,8 @@ def evaluate(traj):
 
 
 # Choose the group on which to perform analyses ("HC_noWMH", "HC_WMH", "MCI_noWMH", "MCI_WMH")
-group_name = "HC_noWMH"
+group_name = 'HC_no_WMH'
+group_list = HC_no_WMH
 
 # Create the results dir for the group
 SIM_DIR_GROUP = SIM_DIR / group_name
@@ -52,7 +53,7 @@ if not Path.exists(SIM_DIR_GROUP):
 paths.HDF_DIR = str(SIM_DIR_GROUP)
 
 # Get the timeseries for the chosen group
-group, timeseries = get_group_ts_for_freqs(group_name, all_fMRI_clean)
+group, timeseries = get_group_ts_for_freqs(group_list, all_fMRI_clean)
 # Get the frequencies (narrow bandwidth) and set the model frequencies
 f_diff = filtPowSpectr.filtPowSpetraMultipleSubjects(timeseries, TR)
 f_diff[np.where(f_diff == 0)] = np.mean(f_diff[np.where(f_diff != 0)])

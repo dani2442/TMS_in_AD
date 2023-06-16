@@ -1,24 +1,15 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-"""     Filter power density to get omega -- Version 1
-Last edit:  2023/03/03
-Authors:    Patow, Gustavo 
-            Leone, Riccardo
-Notes:      - Taken from WholeBrain (changed custom function for filtering to nilearn.clean)
-            - Release notes:
-                * Initial release
-To do:      - 
-Comments:   
+#%%
+import filteredPowerSpectralDensity as filtPowSpectr
+from petTOAD_setup import *
 
-Sources:  Gustavo Patow's WholeBrain Code (https://github.com/dagush/WholeBrain) 
-"""
-# #--------------------------------------------------------------------------
-# COMPUTE POWER SPECTRA FOR
-# NARROWLY FILTERED DATA WITH LOW BANDPASS (0.04 to 0.07 Hz)
-# not # WIDELY FILTERED DATA (0.04 Hz to justBelowNyquistFrequency)
-#     # [justBelowNyquistFrequency depends on TR,
-#     # for a TR of 2s this is 0.249 Hz]
-# #--------------------------------------------------------------------------
+# Get the timeseries for the chosen group
+group_hc_no_wmh, timeseries_hc_no_wmh = get_group_ts_for_freqs("HC_noWMH", all_fMRI_clean)
+group_hc_wmh, timeseries_hc_wmh = get_group_ts_for_freqs("HC_WMH", all_fMRI_clean)
+group_mci_no_wmh, timeseries_mci_no_wmh = get_group_ts_for_freqs("MCI_noWMH", all_fMRI_clean)
+group_mci_wmh, timeseries_mci_wmh = get_group_ts_for_freqs("MCI_WMH", all_fMRI_clean)
+
+
+#%%
 import numpy as np
 import BOLDFilters as BOLDFilters
 
@@ -70,10 +61,12 @@ def filtPowSpetra(signal, TR):
 
 def filtPowSpetraMultipleSubjects(signal, TR):
     if signal.ndim == 2:
+        print("I am doing one subject")
         nSubjects = 1
         nNodes, Tmax = signal.shape  # Here we are assuming we receive only ONE subject...
         Power_Areas_filt_narrow_unsmoothed = filtPowSpetra(signal, TR)
     else:
+        print("I am doing more than one subject")
         # In case we receive more than one subject, we do a mean...
         nSubjects, nNodes, Tmax = signal.shape
         PowSpect_filt_narrow = np.zeros((nSubjects, nNodes, int(np.floor(Tmax/2))))
@@ -89,3 +82,14 @@ def filtPowSpetraMultipleSubjects(signal, TR):
     idxFreqOfMaxPwr = np.argmax(Power_Areas_filt_narrow_smoothed, axis=1)
     f_diff = freqs[idxFreqOfMaxPwr]
     return f_diff
+
+
+
+#%%
+f_diff_hc_no_wmh = filtPowSpetraMultipleSubjects(timeseries_hc_no_wmh, TR)
+f_diff_hc_wmh = filtPowSpetraMultipleSubjects(timeseries_hc_wmh, TR)
+f_diff_mci_no_wmh = filtPowSpetraMultipleSubjects(timeseries_mci_no_wmh, TR)
+f_diff_mci_wmh = filtPowSpetraMultipleSubjects(timeseries_mci_wmh, TR)
+
+#%%
+f_diff[np.where(f_diff == 0)] = np.mean(f_diff[np.where(f_diff != 0)])

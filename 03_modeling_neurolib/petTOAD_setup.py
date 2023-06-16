@@ -41,10 +41,7 @@ all_fMRI_clean = {
 # New subject list overwrites the old one
 subjs = [k for k in all_fMRI_clean.keys()]
 # Get subject list for condition
-HC_no_WMH, HC_WMH, MCI_no_WMH, MCI_WMH = get_classification(subjs)
-# Group HC and MCI
-HC = np.array([j for i in [HC_WMH, HC_no_WMH] for j in i]).astype("object")
-MCI = np.array([j for i in [MCI_WMH, MCI_no_WMH] for j in i]).astype("object")
+HC, MCI, HC_no_WMH, HC_WMH, MCI_no_WMH, MCI_WMH = get_classification(subjs)
 print("petTOAD Setup done!")
 
 # %%

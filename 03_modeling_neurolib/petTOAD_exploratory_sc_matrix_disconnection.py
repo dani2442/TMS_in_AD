@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""   Model simulation with neurolib   -- Version 1.1
-Last edit:  2023/05/30
+"""   Model simulation with neurolib   -- Version 2.1
+Last edit:  2023/06/15
 Authors:    Leone, Riccardo (RL)
 Notes:      - Homogeneous wmh-weighted model simulation of the phenomenological Hopf model with Neurolib
             - Release notes:
@@ -19,8 +19,29 @@ from neurolib.optimize.exploration import BoxSearch
 from neurolib.utils import paths
 from petTOAD_setup import *
 
+# Set the simulation directory for the group
+EXPL_DIR = RES_DIR / "exploratory"
+if not Path.exists(EXPL_DIR):
+    Path.mkdir(EXPL_DIR)
+# Set the directory where to save results
+paths.HDF_DIR = str(EXPL_DIR)
 
 # %% Define functions
+def prepare_subject_simulation(subj, ws, bs):
+    WMH = wmh_dict[subj]
+    sc = model.params.Cmat
+    disconn_sc = get_sc_wmh_weighted(subj)
+    # Define the parametere space to explore
+    parameters = ParameterSpace(
+        {
+            "Cmat": np.multiply(sc, disconn_sc),
+        },
+        kind="grid",
+    )
+    filename = f"{subj}_homogeneous_model.hdf"
+
+    return f_diff, parameters, filename
+
 # Define the evaluation function
 def evaluate(traj):
     model = search.getModelFromTraj(traj)
@@ -41,38 +62,15 @@ def evaluate(traj):
     search.saveToPypet(result_dict, traj)
 
 
-
-
 short_subjs = HC_WMH[:30]
 short_subjs = np.append(short_subjs, HC_no_WMH[:30])
 short_subjs = np.append(short_subjs, MCI_no_WMH[:30])
 short_subjs = np.append(short_subjs, MCI_WMH[:30])
 
 ws = np.linspace(-0.5, 0.5, 31)
-bs = np.linspace(0, 0.1, 5)
+bs = np.linspace(0, 0.02, 5)
 
 wmh_dict = get_wmh_load_homogeneous(subjs)
-
-def prepare_subject_simulation(subj, ws, bs):
-    WMH = wmh_dict[subj]
-    # Define the parametere space to explore
-    parameters = ParameterSpace(
-        {
-            "a": [(np.ones(90) * -0.02) * w * WMH + b for w in ws for b in bs],
-        },
-        kind="grid",
-    )
-    filename = f"{subj}_homogeneous_model.hdf"
-
-    return parameters, filename
-
-# Set the simulation directory for the group
-EXPL_DIR = RES_DIR / "exploratory"
-if not Path.exists(EXPL_DIR):
-    Path.mkdir(EXPL_DIR)
-# Set the directory where to save results
-paths.HDF_DIR = str(EXPL_DIR)
-
 
 #%%
 if __name__ == "__main__":
@@ -100,8 +98,9 @@ if __name__ == "__main__":
     model.params["sigma"] = 0.02
     model.params["K_gl"] = 1.9  # Set this to the best G previously found!!!!
 
-    n_sim = 2
-    for j, subj in enumerate(short_subjs):
+#%%
+    n_sim = 1
+    for j, subj in enumerate(short_subjs[:1]):
         print(f"Starting simulations for subject: {subj}, ({j + 1}/{len(short_subjs)})")
         parameters, filename = prepare_subject_simulation(subj, ws, bs)
         if subj in HC:
@@ -110,6 +109,7 @@ if __name__ == "__main__":
         elif subj in MCI:
             f_diff = filtPowSpectr.filtPowSpetraMultipleSubjects(timeseries_MCI, TR)
             f_diff[np.where(f_diff == 0)] = np.mean(f_diff[np.where(f_diff != 0)])
+        model.params["w"] = 2 * np.pi * f_diff
         model.params["w"] = 2 * np.pi * f_diff
         for i in range(n_sim):
             print(f"Starting simulations n°: {i+1}/{n_sim}")
