@@ -48,23 +48,26 @@ short_subjs = np.append(short_subjs, HC_no_WMH[:30])
 short_subjs = np.append(short_subjs, MCI_no_WMH[:30])
 short_subjs = np.append(short_subjs, MCI_WMH[:30])
 
-ws = np.linspace(-0.5, 0.5, 31)
-bs = np.linspace(0, 0.1, 5)
+ws = np.linspace(-0.1, 0.1, 41)
+bs = np.linspace(-0.05, 0.05, 5)
 
 wmh_dict = get_wmh_load_homogeneous(subjs)
 
 def prepare_subject_simulation(subj, ws, bs):
     WMH = wmh_dict[subj]
+    timeseries = all_fMRI_clean[subj]
+    f_diff = filtPowSpectr.filtPowSpetra(timeseries, TR)
+    f_diff[np.where(f_diff == 0)] = np.mean(f_diff[np.where(f_diff != 0)])
     # Define the parametere space to explore
     parameters = ParameterSpace(
         {
-            "a": [(np.ones(90) * -0.02) * w * WMH + b for w in ws for b in bs],
+            "a": [(np.ones(90) * -0.02) + w * WMH + b for w in ws for b in bs],
         },
         kind="grid",
     )
     filename = f"{subj}_homogeneous_model.hdf"
 
-    return parameters, filename
+    return f_diff, parameters, filename
 
 # Set the simulation directory for the group
 EXPL_DIR = RES_DIR / "exploratory"
@@ -77,11 +80,7 @@ paths.HDF_DIR = str(EXPL_DIR)
 #%%
 if __name__ == "__main__":
     # Get the timeseries for the chosen group
-    group, timeseries = get_group_ts_for_freqs("HC_noWMH", all_fMRI_clean)
-    # Get the frequencies (narrow bandwidth)
-    n_subjs, n_nodes, Tmax = timeseries.shape
-    f_diff = filtPowSpectr.filtPowSpetraMultipleSubjects(timeseries, TR)
-    f_diff[np.where(f_diff == 0)] = np.mean(f_diff[np.where(f_diff != 0)])
+
     # Set if the model has delay
     delay = False
     if not delay:
@@ -96,16 +95,16 @@ if __name__ == "__main__":
     # Empirical fmri is 193 timepoints at TR=3s (9.65 min) + 3 min of initial warm up of the timeseries
     model.params["duration"] = 12.65 * 60 * 1000
     model.params["signalV"] = 0
-    model.params["w"] = 2 * np.pi * f_diff
     model.params["dt"] = 0.1
     model.params["sampling_dt"] = 10.0
     model.params["sigma"] = 0.02
     model.params["K_gl"] = 1.9  # Set this to the best G previously found!!!!
 
-    n_sim = 2
-    for j, subj in enumerate(short_subjs):
+    n_sim = 1
+    for j, subj in enumerate(short_subjs[:1]):
         print(f"Starting simulations for subject: {subj}, ({j + 1}/{len(short_subjs)})")
-        parameters, filename = prepare_subject_simulation(subj, ws, bs)
+        f_diff, parameters, filename = prepare_subject_simulation(subj, ws, bs)
+        model.params["w"] = 2 * np.pi * f_diff
         for i in range(n_sim):
             print(f"Starting simulations n°: {i+1}/{n_sim}")
             #Initialize the search

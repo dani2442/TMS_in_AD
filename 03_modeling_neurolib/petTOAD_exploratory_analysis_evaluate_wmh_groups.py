@@ -19,7 +19,7 @@ import seaborn as sns
 from petTOAD_setup import *
 
 #%%
-EXPL_DIR = RES_DIR / "exploratory_first_round"
+EXPL_DIR = RES_DIR / "exploratory"
 EXPL_FIG_DIR = EXPL_DIR / "Figures"
 if not Path.exists(EXPL_FIG_DIR):
     Path.mkdir(EXPL_FIG_DIR)
@@ -33,9 +33,9 @@ def annotate_star(tbl):
 
 def save_plot_results(res_df, group):
     # Convert the result df into a pivot table so to plot heatmap
-    table_fc = pd.pivot_table(res_df, values='fc_pearson', index='b', columns='w').iloc[5:].astype(float)
-    table_fcd = pd.pivot_table(res_df, values='fcd_ks', index='b', columns='w').iloc[5:].astype(float)
-    table_phfcd = pd.pivot_table(res_df, values='phfcd_ks', index='b', columns='w').iloc[5:].astype(float)
+    table_fc = pd.pivot_table(res_df, values='fc_pearson', index='b', columns='w').astype(float)
+    table_fcd = pd.pivot_table(res_df, values='fcd_ks', index='b', columns='w').astype(float)
+    table_phfcd = pd.pivot_table(res_df, values='phfcd_ks', index='b', columns='w').astype(float)
     # Create a composite score by summing up the single model fits
     table_sum = table_fc + table_phfcd
 
@@ -81,7 +81,7 @@ short_subjs = np.append(short_subjs, MCI_WMH[:30])
 wmh_dict = get_wmh_load_homogeneous(short_subjs)
 # Create a overall df and populate it with single subject results
 big_df = pd.DataFrame()
-for subj in short_subjs[2:]:
+for subj in short_subjs[:-20]:
     res_df = pd.read_csv(EXPL_DIR / f"sub-{subj}_df_results_initial_exploration_wmh.csv", index_col=0)
     res_df['PTID'] = subj
     res_df['wmh_load'] = wmh_dict[subj]
