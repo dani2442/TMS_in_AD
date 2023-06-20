@@ -34,7 +34,7 @@ def annotate_star(tbl):
 def save_plot_results(res_df, group):
     # Convert the result df into a pivot table so to plot heatmap
     table_fc = pd.pivot_table(res_df, values='fc_pearson', index='b', columns='w').astype(float)
-    table_fcd = pd.pivot_table(res_df, values='fcd_ks', index='b', columns='w').astype(float)
+    #table_fcd = pd.pivot_table(res_df, values='fcd_ks', index='b', columns='w').astype(float)
     table_phfcd = pd.pivot_table(res_df, values='phfcd_ks', index='b', columns='w').astype(float)
     # Create a composite score by summing up the single model fits
     table_sum = table_fc + table_phfcd
@@ -87,22 +87,22 @@ for subj in short_subjs[:-20]:
     res_df['wmh_load'] = wmh_dict[subj]
     big_df = pd.concat([big_df, res_df], ignore_index=True)
 # Let's work with 1-fcd and 1-phfcd so to have higher numbers = better fits
-big_df['fcd_ks'] = 1 - big_df['fcd_ks']
+#big_df['fcd_ks'] = 1 - big_df['fcd_ks']
 big_df['phfcd_ks'] = 1 - big_df['phfcd_ks']
 
 #%% Best model fits and relationship with wmh load
 # Get the best model fits for fc, fcd, phfcd for each subject and create one single df
 res_df_best = pd.DataFrame({'fc_pearson' : big_df.groupby(["PTID"])["fc_pearson"].max()}).reset_index()
-best_fcd = pd.DataFrame({'fcd_ks' : big_df.groupby(["PTID"])["fcd_ks"].max()}).reset_index()
+#best_fcd = pd.DataFrame({'fcd_ks' : big_df.groupby(["PTID"])["fcd_ks"].max()}).reset_index()
 best_phfcd = pd.DataFrame({'phfcd_ks' : big_df.groupby(["PTID"])["phfcd_ks"].max()}).reset_index()
-res_df_best = pd.concat([res_df_best, best_fcd])
+#res_df_best = pd.concat([res_df_best, best_fcd])
 res_df_best = pd.concat([res_df_best, best_phfcd])
 res_df_best["wmh_load"] = [wmh_dict[subj] for subj in res_df_best['PTID']]
 # Plot relationship between best model fits and wmh load 
 # Here, all together, with regression
 plt.figure()
 ax1 = sns.regplot(res_df_best, y = 'fc_pearson', x = 'wmh_load', order = 2, scatter_kws={'alpha':0.3}, label = 'fc')
-ax2 = sns.regplot(res_df_best, y = 'fcd_ks', x = 'wmh_load', order = 2, scatter_kws={'alpha':0.3}, label = 'fcd')
+#ax2 = sns.regplot(res_df_best, y = 'fcd_ks', x = 'wmh_load', order = 2, scatter_kws={'alpha':0.3}, label = 'fcd')
 ax3 = sns.regplot(res_df_best, y = 'phfcd_ks', x = 'wmh_load', order = 2, scatter_kws={'alpha':0.3}, label = 'phfcd')
 ax3.set(ylabel = 'PCC / KS distance', xlabel = 'wmh load')
 plt.legend()
@@ -110,16 +110,16 @@ plt.show()
 plt.savefig(EXPL_FIG_DIR / "summary_best_values_regression.png")
 plt.close()
 # Here, separate, only with points
-fig, axs = plt.subplots(ncols= 1, nrows =3, figsize = (4, 12), sharex = True)
+fig, axs = plt.subplots(ncols= 1, nrows = 2, figsize = (4, 12), sharex = True)
 axs[0].plot(res_df_best['wmh_load'], res_df_best['fc_pearson'], 'bo', alpha = 0.3)
 axs[0].set_ylabel('PCC')
 axs[0].set_title('FC')
-axs[1].plot(res_df_best['wmh_load'], res_df_best['fcd_ks'], 'go', alpha = 0.3)
+# axs[1].plot(res_df_best['wmh_load'], res_df_best['fcd_ks'], 'go', alpha = 0.3)
+# axs[1].set_ylabel('1 - KS distance')
+# axs[1].set_title('FCD')
+axs[1].plot(res_df_best['wmh_load'], res_df_best['phfcd_ks'], 'ko', alpha = 0.3)
 axs[1].set_ylabel('1 - KS distance')
-axs[1].set_title('FCD')
-axs[2].plot(res_df_best['wmh_load'], res_df_best['phfcd_ks'], 'ko', alpha = 0.3)
-axs[2].set_ylabel('1 - KS distance')
-axs[2].set_title('phFCD')
+axs[1].set_title('phFCD')
 fig.text(0.5, 0.04, 'Normalized WMH load', ha='center')
 plt.savefig(EXPL_FIG_DIR / "summary_best_values_points.png")
 

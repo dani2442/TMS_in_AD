@@ -49,7 +49,7 @@ short_subjs = np.append(short_subjs, MCI_no_WMH[:30])
 short_subjs = np.append(short_subjs, MCI_WMH[:30])
 
 ws = np.linspace(-0.5, 0.5, 31)
-bs = np.linspace(0, 0.1, 5)
+bs = np.linspace(-0.05, 0.05, 5)
 
 wmh_dict = get_wmh_load_homogeneous(subjs)
 
@@ -58,7 +58,7 @@ def prepare_subject_simulation(subj, ws, bs):
     # Define the parametere space to explore
     parameters = ParameterSpace(
         {
-            "a": [(np.ones(90) * -0.02) * w * WMH + b for w in ws for b in bs],
+            "a": [(np.ones(90) * -0.02) + w * WMH + b for w in ws for b in bs],
         },
         kind="grid",
     )
@@ -78,8 +78,13 @@ paths.HDF_DIR = str(EXPL_DIR)
 if __name__ == "__main__":
     # Get the timeseries for the HC group
     group_HC, timeseries_HC = get_group_ts_for_freqs(HC, all_fMRI_clean)
+    f_diff_HC = filtPowSpectr.filtPowSpetraMultipleSubjects(timeseries_HC, TR)
+    f_diff_HC[np.where(f_diff_HC == 0)] = np.mean(f_diff_HC[np.where(f_diff_HC != 0)])
     # Get the timeseries for the MCI group
     group_MCI, timeseries_MCI = get_group_ts_for_freqs(MCI, all_fMRI_clean)
+    f_diff_MCI = filtPowSpectr.filtPowSpetraMultipleSubjects(timeseries_MCI, TR)
+    f_diff_MCI[np.where(f_diff_MCI == 0)] = np.mean(f_diff_MCI[np.where(f_diff_MCI != 0)])
+
 
     # Set if the model has delay
     delay = False
@@ -105,11 +110,9 @@ if __name__ == "__main__":
         print(f"Starting simulations for subject: {subj}, ({j + 1}/{len(short_subjs)})")
         parameters, filename = prepare_subject_simulation(subj, ws, bs)
         if subj in HC:
-            f_diff = filtPowSpectr.filtPowSpetraMultipleSubjects(timeseries_HC, TR)
-            f_diff[np.where(f_diff == 0)] = np.mean(f_diff[np.where(f_diff != 0)])
+            f_diff = f_diff_HC
         elif subj in MCI:
-            f_diff = filtPowSpectr.filtPowSpetraMultipleSubjects(timeseries_MCI, TR)
-            f_diff[np.where(f_diff == 0)] = np.mean(f_diff[np.where(f_diff != 0)])
+            f_diff = f_diff_MCI
         model.params["w"] = 2 * np.pi * f_diff
         for i in range(n_sim):
             print(f"Starting simulations n°: {i+1}/{n_sim}")

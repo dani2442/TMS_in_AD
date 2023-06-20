@@ -43,7 +43,7 @@ def get_bolds_from_trajs(trajs):
 def calculate_results_from_bolds(bold_arr):
     # Create a new array to store the FC, FCD and phFCD values with the same shape as bold array
     fc_array = np.zeros([nsim, nparms, 90, 90])
-    fcd_array = np.zeros([nsim, nparms, 528])
+    #fcd_array = np.zeros([nsim, nparms, 528])
     phfcd_array = np.zeros([nsim, nparms, 18145])
 
     # Iterate over each element in the bold array
@@ -61,31 +61,31 @@ def calculate_results_from_bolds(bold_arr):
                 print("Simulation has no nans, good to go")
                 print("Calculating FC..")
                 fc_value = func.fc(timeseries)
-                print("Calculating fcd..")
-                fcd_value = func.fcd(timeseries)
-                triu_ind_fcd = np.triu_indices(fcd_value.shape[0], k=1)
-                fcd_vals = fcd_value[triu_ind_fcd]
+                # print("Calculating fcd..")
+                # fcd_value = func.fcd(timeseries)
+                # triu_ind_fcd = np.triu_indices(fcd_value.shape[0], k=1)
+                # fcd_vals = fcd_value[triu_ind_fcd]
                 print("Calculating phFCD")
                 phfcd_value = my_func.phFCD(timeseries)
                 # Store the FC, FCD, phFCD value in the corresponding position in the arrays
                 fc_array[i, j] = fc_value
-                fcd_array[i, j] = fcd_vals
+                # fcd_array[i, j] = fcd_vals
                 phfcd_array[i, j] = phfcd_value
-    return fc_array, fcd_array, phfcd_array
+    return fc_array, phfcd_array #, phfcd_array
 
 
 def save_plot_results(res_df):
     table_fc = pd.pivot_table(res_df, values='fc_pearson', index='b', columns='w')
-    table_fcd = pd.pivot_table(res_df, values='fcd_ks', index='b', columns='w')
+    # table_fcd = pd.pivot_table(res_df, values='fcd_ks', index='b', columns='w')
     table_phfcd = pd.pivot_table(res_df, values='phfcd_ks', index='b', columns='w')
-    plt.figure(figsize = (6,24))
-    plt.subplot(311)
+    plt.figure(figsize = (6,18))
+    plt.subplot(211)
     sns.heatmap(table_fc.astype(float))
     plt.title("FC")
-    plt.subplot(312)
-    sns.heatmap(table_fcd.astype(float))
-    plt.title("FCD")
-    plt.subplot(313)
+    # plt.subplot(312)
+    # sns.heatmap(table_fcd.astype(float))
+    # plt.title("FCD")
+    plt.subplot(212)
     sns.heatmap(table_phfcd.astype(float))
     plt.title("phFCD")
     plt.savefig(sim.EXPL_DIR / f"sub-{subj}_results_heatmap.png")
@@ -113,36 +113,36 @@ for subj_n, subj in enumerate(sim.short_subjs):
     bold_arr = np.array(big_list)
     nsim = len(trajs)
     nparms = len([(np.ones(90) * -0.02) * w * sim.wmh_dict[subj] + b for w in sim.ws for b in sim.bs])
-    fc_array, fcd_array, phfcd_array = calculate_results_from_bolds(bold_arr)
+    fc_array, phfcd_array = calculate_results_from_bolds(bold_arr)
     timeseries = sim.all_fMRI_clean[subj]
     fc = func.fc(timeseries)
-    print("Calculating fcd..")
-    fcd = func.fcd(timeseries)
-    triu_ind_fcd = np.triu_indices(fcd.shape[0], k=1)
-    fcd = fcd[triu_ind_fcd]
+    # print("Calculating fcd..")
+    # fcd = func.fcd(timeseries)
+    # triu_ind_fcd = np.triu_indices(fcd.shape[0], k=1)
+    # fcd = fcd[triu_ind_fcd]
     print("Calculating phFCD")
     phfcd = my_func.phFCD(timeseries)
     # Get the average fc across the n simulations
     sim_fc = fc_array.mean(axis=0)
     print("Calculating fcs correlations...")
     fc_pearson = [func.matrix_correlation(row_fc, fc) for row_fc in sim_fc]
-    print("Calculating FCDs...")
-    fcd_ks = []
-    for row in fcd_array:
-        row_ks = [my_func.matrix_kolmogorov(fcd, sim_fcd) for sim_fcd in row]
-        fcd_ks.append(row_ks)
-        fcd_ks_arr = np.array(fcd_ks)
-    fcd_ks = fcd_ks_arr.mean(axis=0)
+    # print("Calculating FCDs...")
+    # fcd_ks = []
+    # for row in fcd_array:
+    #     row_ks = [my_func.matrix_kolmogorov(fcd, sim_fcd) for sim_fcd in row]
+    #     fcd_ks.append(row_ks)
+    #     fcd_ks_arr = np.array(fcd_ks)
+    # fcd_ks = fcd_ks_arr.mean(axis=0)
     print("Calculating phFCDs...")
     phfcd_ks = []
-    for row in fcd_array:
+    for row in phfcd_array:
         row_phfcd_ks = [my_func.matrix_kolmogorov(phfcd, sim_phfcd) for sim_phfcd in row]
-        phfcd_ks.append(row_ks)
+        phfcd_ks.append(row_phfcd_ks)
         phfcd_ks_arr = np.array(phfcd_ks)
     phfcd_ks = phfcd_ks_arr.mean(axis=0)
 
-    data = [[[(round(b,3), round(w,3)) for w in sim.ws for b in sim.bs], fc_pearson, fcd_ks, phfcd_ks]]
-    columns = ["b_w", "fc_pearson", "fcd_ks", "phfcd_ks"]
+    data = [[[(round(b,3), round(w,3)) for w in sim.ws for b in sim.bs], fc_pearson, phfcd_ks]]
+    columns = ["b_w", "fc_pearson", "phfcd_ks"]
     res_df = pd.DataFrame(data, columns=columns).explode(columns)
     res_df['b'], res_df['w'] = zip(*res_df.b_w)
     res_df = res_df.drop(columns=['b_w'])
