@@ -108,7 +108,6 @@ for subj_n, subj in enumerate(sim.short_subjs):
         for i in ns:
             r = pu.getRun(i, tr)
             traj_list.append(r['BOLD'])
-
         big_list.append(traj_list) 
     bold_arr = np.array(big_list)
     nsim = len(trajs)
