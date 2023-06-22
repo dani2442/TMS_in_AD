@@ -59,27 +59,10 @@ def calculate_results_from_bolds(bold_arr):
     return fc_array, phfcd_array #, phfcd_array
 
 
-def save_plot_results(res_df):
-    table_fc = pd.pivot_table(res_df, values='fc_pearson', index='b', columns='w')
-    # table_fcd = pd.pivot_table(res_df, values='fcd_ks', index='b', columns='w')
-    table_phfcd = pd.pivot_table(res_df, values='phfcd_ks', index='b', columns='w')
-    plt.figure(figsize = (6,18))
-    plt.subplot(211)
-    sns.heatmap(table_fc.astype(float))
-    plt.title("FC")
-    # plt.subplot(312)
-    # sns.heatmap(table_fcd.astype(float))
-    # plt.title("FCD")
-    plt.subplot(212)
-    sns.heatmap(table_phfcd.astype(float))
-    plt.title("phFCD")
-    plt.savefig(sim.EXPL_DIR / f"sub-{subj}_results_heatmap.png")
-
-
-
 #%%
-filename = f"{sim.paths.HDF_DIR}/{subj}_homogeneous_model.hdf"
-trajs = pu.getTrajectorynamesInFile(f"{sim.paths.HDF_DIR}/{subj}_homogeneous_model.hdf")
+filedir = sim.RES_DIR / "model_simulations" / "MCI_noWMH"
+filename = filedir / "MCI_noWMH_with_best_G.hdf"
+trajs = pu.getTrajectorynamesInFile(filename)
 big_list = []
 for traj in trajs:
     traj_list = []
@@ -93,12 +76,12 @@ for traj in trajs:
     big_list.append(traj_list) 
 bold_arr = np.array(big_list)
 nsim = len(trajs)
-nparms = len([(np.ones(90) * -0.02) * w * sim.wmh_dict[subj] + b for w in sim.ws for b in sim.bs])
+nparms = len([np.ones(90) * a for a in np.round(np.arange(-0.15, 0.05, 0.025), 3)])
 fc_array, phfcd_array = calculate_results_from_bolds(bold_arr)
-timeseries = sim.all_fMRI_clean[subj]
-fc = func.fc(timeseries)
-print("Calculating phFCD")
-phfcd = my_func.phFCD(timeseries)
+
+#%%
+
+fc, fcd, phfcd = my_func.calc_and_save_group_stats(sim.MCI_no_WMH, filedir)
 # Get the average fc across the n simulations
 sim_fc = fc_array.mean(axis=0)
 print("Calculating fcs correlations...")
@@ -110,10 +93,9 @@ for row in phfcd_array:
     phfcd_ks.append(row_phfcd_ks)
     phfcd_ks_arr = np.array(phfcd_ks)
 phfcd_ks = phfcd_ks_arr.mean(axis=0)
-data = [[[(round(b,3), round(w,3)) for w in sim.ws for b in sim.bs], fc_pearson, phfcd_ks]]
-columns = ["b_w", "fc_pearson", "phfcd_ks"]
-res_df = pd.DataFrame(data, columns=columns).explode(columns)
-res_df['b'], res_df['w'] = zip(*res_df.b_w)
-res_df = res_df.drop(columns=['b_w'])
-res_df.to_csv(sim.EXPL_DIR / f"sub-{subj}_df_results_initial_exploration_wmh.csv")
-save_plot_results(res_df)
+#%%
+res_dict = {'a': np.round(np.arange(-0.15, 0.05, 0.025),3),
+            'fc_pearson': fc_pearson,
+            'phfcd_ks': phfcd_ks}
+res_df = pd.DataFrame.from_dict(res_dict)
+res_df.to_csv(filedir / f"MCI_df_results_initial_exploration_wmh.csv")
