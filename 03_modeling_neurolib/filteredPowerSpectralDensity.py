@@ -86,6 +86,6 @@ def filtPowSpetraMultipleSubjects(signal, TR):
     freqs = np.arange(0,Tmax/2-1)/Ts
     for seed in np.arange(nNodes):
         Power_Areas_filt_narrow_smoothed[:,seed] = gaussfilt(freqs, Power_Areas_filt_narrow_unsmoothed[:,seed], 0.01)
-    idxFreqOfMaxPwr = np.argmax(Power_Areas_filt_narrow_smoothed, axis=1)
+    idxFreqOfMaxPwr = np.argmax(Power_Areas_filt_narrow_unsmoothed, axis=0)
     f_diff = freqs[idxFreqOfMaxPwr]
     return f_diff
