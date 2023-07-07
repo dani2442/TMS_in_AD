@@ -19,6 +19,7 @@ Sources:  Gustavo Patow's WholeBrain Code (https://github.com/dagush/WholeBrain)
 #     # [justBelowNyquistFrequency depends on TR,
 #     # for a TR of 2s this is 0.249 Hz]
 # #--------------------------------------------------------------------------
+#%%
 import numpy as np
 import BOLDFilters as BOLDFilters
 

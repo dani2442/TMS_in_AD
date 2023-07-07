@@ -17,7 +17,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import neurolib.utils.functions as func
-import petTOAD_exploratory_analysis_WMH_groups as sim
+import petTOAD_exploratory_sc_matrix_disconnection as sim
 import my_functions as my_func
 import seaborn as sns
 from neurolib.utils import pypetUtils as pu
@@ -96,12 +96,8 @@ def save_plot_results(res_df):
 
 for subj_n, subj in enumerate(sim.short_subjs):
     print(f"Now processing subject {subj} ({subj_n + 1} / {len(sim.short_subjs)})")
-    if not sim.random:
-        filename = f"{sim.paths.HDF_DIR}/{subj}_homogeneous_model.hdf"
-        trajs = pu.getTrajectorynamesInFile(f"{sim.paths.HDF_DIR}/{subj}_homogeneous_model.hdf")
-    else:
-        filename = f"{sim.paths.HDF_DIR}/{subj}_homogeneous_model_random.hdf"
-        trajs = pu.getTrajectorynamesInFile(f"{sim.paths.HDF_DIR}/{subj}_homogeneous_model_random.hdf")
+    filename = f"{sim.paths.HDF_DIR}/{subj}_sc_disconn_model.hdf"
+    trajs = pu.getTrajectorynamesInFile(filename)
     big_list = []
     for traj in trajs:
         traj_list = []
@@ -115,7 +111,7 @@ for subj_n, subj in enumerate(sim.short_subjs):
         big_list.append(traj_list) 
     bold_arr = np.array(big_list)
     nsim = len(trajs)
-    nparms = len([(np.ones(90) * -0.02) * w * sim.wmh_dict[subj] + b for w in sim.ws for b in sim.bs])
+    nparms = 1
     fc_array, phfcd_array = calculate_results_from_bolds(bold_arr)
     timeseries = sim.all_fMRI_clean[subj]
     fc = func.fc(timeseries)
@@ -143,11 +139,8 @@ for subj_n, subj in enumerate(sim.short_subjs):
         phfcd_ks.append(row_phfcd_ks)
         phfcd_ks_arr = np.array(phfcd_ks)
     phfcd_ks = phfcd_ks_arr.mean(axis=0)
-
-    data = [[[(round(b,3), round(w,3)) for w in sim.ws for b in sim.bs], fc_pearson, phfcd_ks]]
-    columns = ["b_w", "fc_pearson", "phfcd_ks"]
+    data = [[fc_pearson, phfcd_ks]]
+    columns = ["fc_pearson", "phfcd_ks"]
     res_df = pd.DataFrame(data, columns=columns).explode(columns)
-    res_df['b'], res_df['w'] = zip(*res_df.b_w)
-    res_df = res_df.drop(columns=['b_w'])
     res_df.to_csv(sim.EXPL_DIR / f"sub-{subj}_df_results_initial_exploration_wmh.csv")
-    save_plot_results(res_df)
+    # save_plot_results(res_df)
