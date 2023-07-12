@@ -41,19 +41,32 @@ def evaluate(traj):
     search.saveToPypet(result_dict, traj)
 
 
-
+random = True
 
 short_subjs = HC_WMH[:30]
 short_subjs = np.append(short_subjs, HC_no_WMH[:30])
 short_subjs = np.append(short_subjs, MCI_no_WMH[:30])
 short_subjs = np.append(short_subjs, MCI_WMH[:30])
 
-ws = np.linspace(-0.5, 0.5, 31)
-bs = np.linspace(-0.05, 0.05, 5)
+ws_min = -0.1
+ws_max = 0.1
+bs_min = -0.025
+bs_max = 0.025
 
-wmh_dict = get_wmh_load_homogeneous(subjs)
+ws = np.linspace(ws_min, ws_max, 21)
+bs = np.linspace(bs_min, bs_max, 5)
 
-def prepare_subject_simulation(subj, ws, bs):
+if not random:
+    wmh_dict = get_wmh_load_homogeneous(subjs)
+else:
+    wmh_dict_pre = get_wmh_load_homogeneous(subjs)
+    # random
+    wmh_rand = np.array([w for w in wmh_dict_pre.values()])
+    np.random.seed(1991)
+    np.random.shuffle(wmh_rand)
+    wmh_dict = {k:wmh_rand[n] for n, k in enumerate(wmh_dict_pre.keys())}
+
+def prepare_subject_simulation(subj, ws, bs, random):
     WMH = wmh_dict[subj]
     # Define the parametere space to explore
     parameters = ParameterSpace(
@@ -62,12 +75,18 @@ def prepare_subject_simulation(subj, ws, bs):
         },
         kind="grid",
     )
-    filename = f"{subj}_homogeneous_model.hdf"
+    if not random:
+        filename = f"{subj}_homogeneous_model.hdf"
+    else:
+        filename = f"{subj}_homogeneous_model_random.hdf"
 
     return parameters, filename
 
 # Set the simulation directory for the group
-EXPL_DIR = RES_DIR / "exploratory"
+if not random:
+    EXPL_DIR = RES_DIR / f"exploratory_ws_{ws_min}-{ws_max}_bs_{bs_min}-{bs_max}"
+else:
+    EXPL_DIR = RES_DIR / f"exploratory_ws_{ws_min}-{ws_max}_bs_{bs_min}-{bs_max}_random"
 if not Path.exists(EXPL_DIR):
     Path.mkdir(EXPL_DIR)
 # Set the directory where to save results
@@ -108,7 +127,7 @@ if __name__ == "__main__":
     n_sim = 2
     for j, subj in enumerate(short_subjs):
         print(f"Starting simulations for subject: {subj}, ({j + 1}/{len(short_subjs)})")
-        parameters, filename = prepare_subject_simulation(subj, ws, bs)
+        parameters, filename = prepare_subject_simulation(subj, ws, bs, random=random)
         if subj in HC:
             f_diff = f_diff_HC
         elif subj in MCI:

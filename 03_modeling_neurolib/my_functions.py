@@ -407,7 +407,7 @@ def calc_and_save_group_stats(group, save_dir, **kwargs):
     Useful for comparing to model simulations
     :param group: group, a dictionary (e.g., {subjs:ts})
     :type group: dict 
-    :return: Nothing
+    :return: fc, fcd, phfcd
 
     """
     import scipy.io as sio

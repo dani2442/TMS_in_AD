@@ -17,7 +17,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import neurolib.utils.functions as func
-import petTOAD_exploratory_analysis_WMH_groups as sim
+import petTOAD_exploratory_analysis_WMH_groups_heterogeneous as sim
 import my_functions as my_func
 import seaborn as sns
 from neurolib.utils import pypetUtils as pu
@@ -89,21 +89,22 @@ def save_plot_results(res_df):
     sns.heatmap(table_phfcd.astype(float))
     plt.title("phFCD")
     plt.savefig(sim.EXPL_DIR / f"sub-{subj}_results_heatmap.png")
+    plt.close()
 
 
 
 #%%
 
-for subj_n, subj in enumerate(sim.short_subjs):
+for subj_n, subj in enumerate(sim.short_subjs[5:]):
     print(f"Now processing subject {subj} ({subj_n + 1} / {len(sim.short_subjs)})")
     if not sim.random:
-        filename = f"{sim.paths.HDF_DIR}/{subj}_homogeneous_model.hdf"
-        trajs = pu.getTrajectorynamesInFile(f"{sim.paths.HDF_DIR}/{subj}_homogeneous_model.hdf")
+        filename = f"{sim.paths.HDF_DIR}/{subj}_heterogeneous_model.hdf"
+        trajs = pu.getTrajectorynamesInFile(f"{sim.paths.HDF_DIR}/{subj}_heterogeneous_model.hdf")
     else:
-        filename = f"{sim.paths.HDF_DIR}/{subj}_homogeneous_model_random.hdf"
-        trajs = pu.getTrajectorynamesInFile(f"{sim.paths.HDF_DIR}/{subj}_homogeneous_model_random.hdf")
+        filename = f"{sim.paths.HDF_DIR}/{subj}__heterogeneous_model_random.hdf"
+        trajs = pu.getTrajectorynamesInFile(f"{sim.paths.HDF_DIR}/{subj}__heterogeneous_model_random.hdf")
     big_list = []
-    for traj in trajs:
+    for traj in trajs[:2]:
         traj_list = []
         tr = pu.loadPypetTrajectory(filename, traj)
         run_names = tr.f_get_run_names()
@@ -115,7 +116,7 @@ for subj_n, subj in enumerate(sim.short_subjs):
         big_list.append(traj_list) 
     bold_arr = np.array(big_list)
     nsim = len(trajs)
-    nparms = len([(np.ones(90) * -0.02) * w * sim.wmh_dict[subj] + b for w in sim.ws for b in sim.bs])
+    nparms = len([np.array([round(-0.02 - w*(1-n) + b, 5) for n in np.arange(90)]) for w in np.linspace(sim.ws_min, sim.ws_max, 11) for b in np.linspace(sim.bs_min, sim.bs_max, 11)])
     fc_array, phfcd_array = calculate_results_from_bolds(bold_arr)
     timeseries = sim.all_fMRI_clean[subj]
     fc = func.fc(timeseries)
@@ -149,5 +150,6 @@ for subj_n, subj in enumerate(sim.short_subjs):
     res_df = pd.DataFrame(data, columns=columns).explode(columns)
     res_df['b'], res_df['w'] = zip(*res_df.b_w)
     res_df = res_df.drop(columns=['b_w'])
-    res_df.to_csv(sim.EXPL_DIR / f"sub-{subj}_df_results_initial_exploration_wmh.csv")
-    save_plot_results(res_df)
+    res_df.to_csv(sim.EXPL_DIR / f"sub-{subj}_df_results_initial_exploration_wmh_G.csv")
+    # save_plot_results(res_df)
+# %%

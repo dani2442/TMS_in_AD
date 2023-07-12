@@ -155,17 +155,15 @@ def get_wmh_load_homogeneous(subjs):
     return homo_wmh_dict
 
 
-def get_sc_wmh_weighted(subj, sc_norm):
-    wmh_df = pd.read_csv(LQT_DIR / f"sub-{subj}" / "pct_spared_sc_matrix.csv")
-    wmh_df = wmh_df.iloc[:200, 1:201]
-    sc_wmh_weighted = sc_norm * wmh_df / 100.0
-    return sc_wmh_weighted
+def get_sc_wmh_weighted(subj):
+    spared_sc = pd.read_csv(LQT_DIR / f"sub-{subj}" / "pct_spared_sc_matrix.csv", index_col = 0)
+    spared_sc_perc = spared_sc / 100
+    return spared_sc_perc
 
 
 def get_node_damage(subj):
-    wmh_df = pd.read_csv(LQT_DIR / f"sub-{subj}" / "pct_sdc_matrix.csv")
-    # Computes the percent damage sustained by each node
-    wmh_damage = wmh_df.iloc[:200, 1:201].mean(axis=0).to_numpy()
+    wmh_df = pd.read_csv(LQT_DIR / f"sub-{subj}" / "pct_spared_sc_matrix.csv", index_col = 0)    
+    wmh_damage = wmh_df[wmh_df != 0].mean(axis = 0) / 100
     return wmh_damage
 
 

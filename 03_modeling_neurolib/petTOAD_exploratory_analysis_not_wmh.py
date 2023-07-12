@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""   Model simulation with neurolib   -- Version 2.1
-Last edit:  2023/06/15
+"""   Model simulation with neurolib   -- Version 1.1
+Last edit:  2023/05/30
 Authors:    Leone, Riccardo (RL)
 Notes:      - Homogeneous wmh-weighted model simulation of the phenomenological Hopf model with Neurolib
             - Release notes:
@@ -19,30 +19,8 @@ from neurolib.optimize.exploration import BoxSearch
 from neurolib.utils import paths
 from petTOAD_setup import *
 
-# Set the simulation directory for the group
-EXPL_DIR = RES_DIR / "exploratory_sc_disconn"
-if not Path.exists(EXPL_DIR):
-    Path.mkdir(EXPL_DIR)
-# Set the directory where to save results
-paths.HDF_DIR = str(EXPL_DIR)
 
 # %% Define functions
-def prepare_subject_simulation(subj):
-    sc = model.params.Cmat
-    disconn_sc = get_sc_wmh_weighted(subj)
-    disconn_sc = disconn_sc.to_numpy()
-    disconn_cmat = np.multiply(sc, disconn_sc)
-    # Define the parametere space to explore
-    parameters = ParameterSpace(
-        {
-            "Cmat": [disconn_cmat],
-        },
-        kind="grid",
-    )
-    filename = f"{subj}_sc_disconn_model.hdf"
-
-    return parameters, filename
-
 # Define the evaluation function
 def evaluate(traj):
     model = search.getModelFromTraj(traj)
@@ -68,10 +46,16 @@ short_subjs = np.append(short_subjs, HC_no_WMH[:30])
 short_subjs = np.append(short_subjs, MCI_no_WMH[:30])
 short_subjs = np.append(short_subjs, MCI_WMH[:30])
 
+# Set the simulation directory for the group
+EXPL_DIR = RES_DIR / "exploratory_not_wmh_weighted"
+if not Path.exists(EXPL_DIR):
+    Path.mkdir(EXPL_DIR)
+# Set the directory where to save results
+paths.HDF_DIR = str(EXPL_DIR)
+
 
 #%%
 if __name__ == "__main__":
-
     # Get the timeseries for the HC group
     group_HC, timeseries_HC = get_group_ts_for_freqs(HC, all_fMRI_clean)
     f_diff_HC = filtPowSpectr.filtPowSpetraMultipleSubjects(timeseries_HC, TR)
@@ -81,7 +65,13 @@ if __name__ == "__main__":
     f_diff_MCI = filtPowSpectr.filtPowSpetraMultipleSubjects(timeseries_MCI, TR)
     f_diff_MCI[np.where(f_diff_MCI == 0)] = np.mean(f_diff_MCI[np.where(f_diff_MCI != 0)])
 
-
+    parameters = ParameterSpace(
+            {
+                "a": [(np.ones(90) * a) for a in np.linspace(-0.08, 0.02, 101)],
+                "K_gl": [float(G) for G in np.linspace(0.5, 2.5, 21)]
+            },
+            kind="grid",
+        )
     # Set if the model has delay
     delay = False
     if not delay:
@@ -99,29 +89,31 @@ if __name__ == "__main__":
     model.params["dt"] = 0.1
     model.params["sampling_dt"] = 10.0
     model.params["sigma"] = 0.02
-    model.params["K_gl"] = 1.9  # Set this to the best G previously found!!!!
-    model.params["a"] = np.ones(90) * -0.02
-    n_sim = 2
-
-    for j, subj in enumerate(short_subjs):
-        print(f"Starting simulations for subject: {subj}, ({j + 1}/{len(short_subjs)})")
-        parameters, filename = prepare_subject_simulation(subj)
-        if subj in HC:
-            f_diff = f_diff_HC
-        elif subj in MCI:
-            f_diff = f_diff_MCI
-        model.params["w"] = 2 * np.pi * f_diff
-        for i in range(n_sim):
-            print(f"Starting simulations n°: {i+1}/{n_sim}")
-            #Initialize the search
-            search = BoxSearch(
-                model=model,
-                evalFunction=evaluate,
-                parameterSpace=parameters,
-                filename=filename,
-            )
-            search.run(chunkwise=True, chunksize=60000, append=True)
-
+    n_sim = 10
+    for i in range(n_sim):
+        print(f"Starting simulations n°: {i+1}/{n_sim} for HC...")
+        model.params["w"] = 2 * np.pi * f_diff_HC
+        filename = "homogeneous_model_not_WMH-weight_HC.hdf"    
+        #Initialize the search
+        search = BoxSearch(
+            model=model,
+            evalFunction=evaluate,
+            parameterSpace=parameters,
+            filename=filename,
+        )
+        search.run(chunkwise=True, chunksize=60000, append=True)
+    for i in range(n_sim):
+        print(f"Starting simulations n°: {i+1}/{n_sim} for MCI...")
+        model.params["w"] = 2 * np.pi * f_diff_MCI
+        filename = "homogeneous_model_not_WMH-weight_MCI.hdf"    
+        #Initialize the search
+        search = BoxSearch(
+            model=model,
+            evalFunction=evaluate,
+            parameterSpace=parameters,
+            filename=filename,
+        )
+        search.run(chunkwise=True, chunksize=60000, append=True)
 
 
 # %%
