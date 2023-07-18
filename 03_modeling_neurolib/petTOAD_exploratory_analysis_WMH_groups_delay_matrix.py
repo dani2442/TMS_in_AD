@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """   Model simulation with neurolib   -- Version 1.1
-Last edit:  2023/05/30
+Last edit:  2023/12/07
 Authors:    Leone, Riccardo (RL)
 Notes:      - Homogeneous wmh-weighted model simulation of the phenomenological Hopf model with Neurolib
             - Release notes:
@@ -40,53 +40,34 @@ def evaluate(traj):
 
     search.saveToPypet(result_dict, traj)
 
-
-random = True
-
-short_subjs = HC_WMH[:30]
-short_subjs = np.append(short_subjs, HC_no_WMH[:30])
-short_subjs = np.append(short_subjs, MCI_no_WMH[:30])
-short_subjs = np.append(short_subjs, MCI_WMH[:30])
-
-ws_min = -0.1
-ws_max = 0.1
-bs_min = -0.025
-bs_max = 0.025
-
-ws = np.linspace(ws_min, ws_max, 21)
-bs = np.linspace(bs_min, bs_max, 5)
-
-if not random:
-    wmh_dict = get_wmh_load_homogeneous(subjs)
-else:
-    wmh_dict_pre = get_wmh_load_homogeneous(subjs)
-    # random
-    wmh_rand = np.array([w for w in wmh_dict_pre.values()])
-    np.random.seed(1991)
-    np.random.shuffle(wmh_rand)
-    wmh_dict = {k:wmh_rand[n] for n, k in enumerate(wmh_dict_pre.keys())}
-
-def prepare_subject_simulation(subj, ws, bs, random):
-    WMH = wmh_dict[subj]
+def prepare_subject_simulation(subj, random):
     # Define the parametere space to explore
     parameters = ParameterSpace(
-        {
+        {'Dmat_weight': np.around(np.linspace(10, 36000, 101), 0)
         
         },
         kind="grid",
     )
     if not random:
-        filename = f"{subj}_homogeneous_model.hdf"
+        filename = f"{subj}_model_delay_matrix.hdf"
     else:
-        filename = f"{subj}_homogeneous_model_random.hdf"
+        filename = f"{subj}_model_delay_matrix_random.hdf"
 
     return parameters, filename
 
+
+random = False
+
+short_subjs = HC_WMH[:15]
+# short_subjs = np.append(short_subjs, HC_no_WMH[:30])
+# short_subjs = np.append(short_subjs, MCI_no_WMH[:30])
+short_subjs = np.append(short_subjs, MCI_WMH[:15])
+
 # Set the simulation directory for the group
 if not random:
-    EXPL_DIR = RES_DIR / f"exploratory_ws_{ws_min}-{ws_max}_bs_{bs_min}-{bs_max}"
+    EXPL_DIR = RES_DIR / f"exploratory_delay"
 else:
-    EXPL_DIR = RES_DIR / f"exploratory_ws_{ws_min}-{ws_max}_bs_{bs_min}-{bs_max}_random"
+    EXPL_DIR = RES_DIR / f"exploratory_delay_random"
 if not Path.exists(EXPL_DIR):
     Path.mkdir(EXPL_DIR)
 # Set the directory where to save results
@@ -96,41 +77,39 @@ paths.HDF_DIR = str(EXPL_DIR)
 #%%
 if __name__ == "__main__":
     # Get the timeseries for the HC group
-    group_HC, timeseries_HC = get_group_ts_for_freqs(HC, all_fMRI_clean)
+    group_HC, timeseries_HC = get_group_ts_for_freqs(HC_WMH, all_fMRI_clean)
     f_diff_HC = filtPowSpectr.filtPowSpetraMultipleSubjects(timeseries_HC, TR)
     f_diff_HC[np.where(f_diff_HC == 0)] = np.mean(f_diff_HC[np.where(f_diff_HC != 0)])
     # Get the timeseries for the MCI group
-    group_MCI, timeseries_MCI = get_group_ts_for_freqs(MCI, all_fMRI_clean)
+    group_MCI, timeseries_MCI = get_group_ts_for_freqs(MCI_WMH, all_fMRI_clean)
     f_diff_MCI = filtPowSpectr.filtPowSpetraMultipleSubjects(timeseries_MCI, TR)
     f_diff_MCI[np.where(f_diff_MCI == 0)] = np.mean(f_diff_MCI[np.where(f_diff_MCI != 0)])
 
-
-    # Set if the model has delay
-    delay = False
-    if not delay:
-        Dmat_dummy = np.zeros_like(sc)
-        Dmat = Dmat_dummy
-    else:
-        pass
-    # Initialize the model (neurolib wants a Dmat to initialize the mode,
-    # so we gave it an empty Dmat, which we also later cancel by setting it to None)
-    model = PhenoHopfModel(Cmat=sc, Dmat=Dmat)
-    # Empirical fmri is 193 timepoints at TR=3s (9.65 min) + 3 min of initial warm up of the timeseries
-    model.params["duration"] = 12.65 * 60 * 1000
-    model.params["signalV"] = 0
-    model.params["dt"] = 0.1
-    model.params["sampling_dt"] = 10.0
-    model.params["sigma"] = 0.02
-    model.params["K_gl"] = 1.9  # Set this to the best G previously found!!!!
-    model.params["a"] = np.ones(90) * -0.02
-
     n_sim = 2
     for j, subj in enumerate(short_subjs):
-        print(f"Starting simulations for subject: {subj}, ({j + 1}/{len(short_subjs)})")
-        parameters, filename = prepare_subject_simulation(subj, ws, bs, random=random)
-        if subj in HC:
+        print(f"Starting simulations for subject: {subj}, ({j + 1}/{len(short_subjs)})")        
+        # Set if the model has delay
+        delay = False
+        if not delay:
+            Dmat_dummy = np.zeros_like(sc)
+            Dmat = Dmat_dummy
+        else:
+            Dmat = get_sc_wmh_weighted(subj)
+            Dmat = Dmat.values
+        # Initialize the model (neurolib wants a Dmat to initialize the model,
+        # so we gave it an empty Dmat, which we also later cancel by setting it to None)
+        model = PhenoHopfModel(Cmat=sc, Dmat=Dmat)
+        # Empirical fmri is 193 timepoints at TR=3s (9.65 min) + 3 min of initial warm up of the timeseries
+        model.params["duration"] = 12.65 * 60 * 1000
+        model.params["dt"] = 0.1
+        model.params["sampling_dt"] = 10.0
+        model.params["sigma"] = 0.02
+        model.params["K_gl"] = 1.9  # Set this to the best G previously found!!!!
+        model.params["a"] = np.ones(90) * -0.02
+        parameters, filename = prepare_subject_simulation(subj, random=random)
+        if subj in HC_WMH:
             f_diff = f_diff_HC
-        elif subj in MCI:
+        elif subj in MCI_WMH:
             f_diff = f_diff_MCI
         model.params["w"] = 2 * np.pi * f_diff
         for i in range(n_sim):
