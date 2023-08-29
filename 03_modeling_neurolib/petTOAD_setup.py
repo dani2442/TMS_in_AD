@@ -44,7 +44,8 @@ all_fMRI_clean = {
 subjs = [k for k in all_fMRI_clean.keys()]
 # Get subject list for each condition
 CN, MCI, CN_no_WMH, CN_WMH, MCI_no_WMH, MCI_WMH = get_classification(subjs)
-print("petTOAD Setup done!")
 
 # We only want to simulate with WMH-weighted models those patients that do have wmh
 subjs_to_sim = np.hstack([CN_WMH, MCI_WMH])
+
+print("petTOAD Setup done!")

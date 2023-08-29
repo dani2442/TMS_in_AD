@@ -126,6 +126,14 @@ def get_classification(subjs):
     MCI = np.hstack([MCI_WMH, MCI_no_WMH])
     return CN, MCI, CN_no_WMH, CN_WMH, MCI_no_WMH, MCI_WMH
 
+def define_subjs_to_sim():
+    subjs_to_sim_pre = np.hstack([CN_WMH, MCI_WMH])
+    df_petTOAD = pd.read_csv(RES_DIR / "df_petTOAD.csv")
+    df_petTOAD["PTID"] = df_petTOAD["PTID"].str.replace("_", "")
+    df_petTOAD = df_petTOAD[df_petTOAD["WMH_load_subj_space"] < 80000]
+    df_petTOAD = df_petTOAD[df_petTOAD["PTID"].isin(subjs_to_sim_pre)]
+    return df_petTOAD["PTID"].to_numpy()
+
 def get_group_ts_for_freqs(group_list, all_fMRI_clean):
 
     group_fMRI_clean = {k: v for k, v in all_fMRI_clean.items() if k in group_list}
