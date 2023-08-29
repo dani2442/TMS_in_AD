@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""     Find the best G coupling parameter based on healthy controls -- Version 2.1
-Last edit:  2023/03/27
+"""     Load file for petTOAD -- Version 2.2
+Last edit:  2023/08/05
 Authors:    Leone, Riccardo (RL)
 Notes:      - Data loader file 
             - Release notes:
-                * Added disconnectomics and nodal damage
+                * Refactored df names to new standard
 To do:      - 
 Comments:   Current implementation is for the  AAL atlas
 
@@ -16,13 +16,12 @@ Sources:  Gustavo Patow's WholeBrain Code (https://github.com/dagush/WholeBrain)
 
 # %% ~~ Imports and directories ~~ %%#
 # Import needed packages
+import glob
 import json
 import numpy as np
 import pandas as pd
-import glob
 from pathlib import Path
 from bids import BIDSLayout
-
 
 # Directories
 SPINE = Path.cwd().parents[2]
@@ -41,7 +40,7 @@ if not Path.is_dir(RES_DIR):
 
 LQT_DIR = RES_DIR / "LQT"
 
-SIM_DIR = RES_DIR / "model_simulations"
+SIM_DIR = RES_DIR / "final_simulations"
 if not Path.exists(SIM_DIR):
     Path.mkdir(SIM_DIR)
 
@@ -53,9 +52,35 @@ def get_layout_subjs():
     print("Done with the layout...")
     return layout, subjs
 
+def load_norm_aal_sc():
+    sc_list = []
+    # Loop through all files that match the pattern "S*_rawcounts.tsv"
+    for filename in glob.glob(str(UTL_DIR / "AAL_not_norm" / "S*_rawcounts.csv")):
+        # Load the data from the file using numpy
+        arr = np.genfromtxt(filename, delimiter=",")
+        # Append the loaded data to the list
+        sc_list.append(arr)
+    sc_mean = np.array(sc_list).mean(axis=0)
+    # In the paper by Skoch et al., they state that since they "do not enforce symmetry in any direct
+    # artificial way, the matrices are not perfectly symmetrical". In modeling we commonly 
+    # symmetrise, so we do the same here.
+    sc_mean_sym = (sc_mean + sc_mean.T) / 2
+    sc_norm = sc_mean_sym / sc_mean_sym.max()
+    return sc_norm
+
+def load_ts_aal(subj):
+    sub_ts = np.genfromtxt(
+        XCP_DIR
+        / f"sub-{subj}"
+        / f"ses-{REL_SES}"
+        / "func"
+        / f"sub-{subj}_ses-M00_task-rest_space-MNI152NLin2009cAsym_atlas-AAL_cort_timeseries.csv",
+        delimiter=",",
+    )
+    return sub_ts
 
 def check_ts(all_fMRI):
-    """This function checks that the timeseries doesn't have rows with all zeros."""
+    """This function checks that the timeseries doesn't have empty rows."""
     zeros_ts = []
     for subj, ts in all_fMRI.items():
         zeros_row = np.where(np.all(np.isclose(ts, 0), axis=1))[0]
@@ -74,62 +99,32 @@ def check_ts(all_fMRI):
 
     return all_fMRI_cleaned
 
-
-def load_ts_aal(subj):
-    sub_ts = np.genfromtxt(
-        XCP_DIR
-        / f"sub-{subj}"
-        / f"ses-{REL_SES}"
-        / "func"
-        / f"sub-{subj}_ses-M00_task-rest_space-MNI152NLin2009cAsym_atlas-AAL_cort_timeseries.csv",
-        delimiter=",",
-    )
-    return sub_ts
-
-
-def load_norm_aal_sc():
-    sc_list = []
-    # Loop through all files that match the pattern "S*_rawcounts.tsv"
-    for filename in glob.glob(str(UTL_DIR / "AAL_not_norm" / "S*_rawcounts.csv")):
-        # Load the data from the file using numpy
-        arr = np.genfromtxt(filename, delimiter=",")
-        # Append the loaded data to the list
-        sc_list.append(arr)
-    sc_mean = np.array(sc_list).mean(axis=0)
-    # In the paper by Skoch et al., they state that since they "do not enforce symmetry in any direct
-    # artificial way, the matrices are not perfectly symmetrical". In modeling we commonly 
-    # symmetrise, so we do the same here.
-    sc_mean_sym = (sc_mean + sc_mean.T) / 2
-    sc_norm = sc_mean_sym / sc_mean_sym.max()
-    return sc_norm
-
-
 def get_classification(subjs):
-    adnimerge = pd.read_csv(RES_DIR / "petTOAD_dataframe.csv")
-    adnimerge["PTID"] = adnimerge["PTID"].str.replace("_", "")
+    df_petTOAD = pd.read_csv(RES_DIR / "df_petTOAD.csv")
+    df_petTOAD["PTID"] = df_petTOAD["PTID"].str.replace("_", "")
 
-    HC_no_WMH = adnimerge[
-        (adnimerge["PTID"].isin(subjs))
-        & ((adnimerge["Group_bin_Fazekas"] == "CN_no_WMH"))
+    CN_no_WMH = df_petTOAD[
+        (df_petTOAD["PTID"].isin(subjs))
+        & ((df_petTOAD["Group_bin_Fazekas"] == "CN_no_WMH"))
     ]["PTID"].unique()
 
-    HC_WMH = adnimerge[
-        (adnimerge["PTID"].isin(subjs)) & ((adnimerge["Group_bin_Fazekas"] == "CN_WMH"))
+    CN_WMH = df_petTOAD[
+        (df_petTOAD["PTID"].isin(subjs)) & ((df_petTOAD["Group_bin_Fazekas"] == "CN_WMH"))
     ]["PTID"].unique()
 
-    MCI_no_WMH = adnimerge[
-        (adnimerge["PTID"].isin(subjs))
-        & ((adnimerge["Group_bin_Fazekas"] == "MCI_no_WMH"))
+    MCI_no_WMH = df_petTOAD[
+        (df_petTOAD["PTID"].isin(subjs))
+        & ((df_petTOAD["Group_bin_Fazekas"] == "MCI_no_WMH"))
     ]["PTID"].unique()
 
-    MCI_WMH = adnimerge[
-        (adnimerge["PTID"].isin(subjs))
-        & ((adnimerge["Group_bin_Fazekas"] == "MCI_WMH"))
+    MCI_WMH = df_petTOAD[
+        (df_petTOAD["PTID"].isin(subjs))
+        & ((df_petTOAD["Group_bin_Fazekas"] == "MCI_WMH"))
     ]["PTID"].unique()
 
-    HC = np.array([j for i in [HC_WMH, HC_no_WMH] for j in i]).astype("object")
-    MCI = np.array([j for i in [MCI_WMH, MCI_no_WMH] for j in i]).astype("object")
-    return HC, MCI, HC_no_WMH, HC_WMH, MCI_no_WMH, MCI_WMH
+    CN = np.hstack([CN_WMH, CN_no_WMH])
+    MCI = np.hstack([MCI_WMH, MCI_no_WMH])
+    return CN, MCI, CN_no_WMH, CN_WMH, MCI_no_WMH, MCI_WMH
 
 def get_group_ts_for_freqs(group_list, all_fMRI_clean):
 
@@ -138,33 +133,40 @@ def get_group_ts_for_freqs(group_list, all_fMRI_clean):
 
     return group_fMRI_clean, timeseries
 
-
-# %%
 def get_wmh_load_homogeneous(subjs):
-    adnimerge = pd.read_csv(RES_DIR / "petTOAD_dataframe.csv")
-    adnimerge["PTID"] = adnimerge["PTID"].str.replace("_", "")
-    adnimerge = adnimerge[adnimerge["PTID"].isin(subjs)]
-    adnimerge["WMH_load_subj_space_norm"] = (
-        adnimerge["WMH_load_subj_space"] - adnimerge["WMH_load_subj_space"].min()
+    df_petTOAD = pd.read_csv(RES_DIR / "df_petTOAD.csv")
+    df_petTOAD["PTID"] = df_petTOAD["PTID"].str.replace("_", "")
+    df_petTOAD = df_petTOAD[df_petTOAD["WMH_load_subj_space"] < 80000]
+    df_petTOAD = df_petTOAD[df_petTOAD["PTID"].isin(subjs)]
+    df_petTOAD["WMH_load_subj_space_norm"] = (
+        df_petTOAD["WMH_load_subj_space"] - df_petTOAD["WMH_load_subj_space"].min()
     ) / (
-        adnimerge["WMH_load_subj_space"].max() - adnimerge["WMH_load_subj_space"].min()
+        df_petTOAD["WMH_load_subj_space"].max() - df_petTOAD["WMH_load_subj_space"].min()
     )
     homo_wmh_dict = dict(
-        zip(adnimerge["PTID"], round(adnimerge["WMH_load_subj_space_norm"], 3))
+        zip(df_petTOAD["PTID"], round(df_petTOAD["WMH_load_subj_space_norm"], 3))
     )
+
     return homo_wmh_dict
 
+def get_wmh_load_random(subjs):
+    np.random.seed(1991)
+    mins = np.random.normal(0.1, 0.01, len(subjs))
+    maxs = np.random.normal(0.9, 0.01, len(subjs))
+    arr_wmh_rand = np.hstack([mins, maxs])
+    np.random.shuffle(arr_wmh_rand)
+    wmh_dict_rand = {subj: round(arr_wmh_rand[i],3) for i, subj in enumerate(subjs)}
+    return wmh_dict_rand
 
 def get_sc_wmh_weighted(subj):
     spared_sc = pd.read_csv(LQT_DIR / f"sub-{subj}" / "pct_spared_sc_matrix.csv", index_col = 0)
     spared_sc_perc = spared_sc / 100
     return spared_sc_perc
 
-
 def get_node_damage(subj):
     wmh_df = pd.read_csv(LQT_DIR / f"sub-{subj}" / "pct_spared_sc_matrix.csv", index_col = 0)    
     wmh_damage = wmh_df[wmh_df != 0].mean(axis = 0) / 100
-    return wmh_damage
-
-
-# %%
+    # For how the code is written now, if a subject has all its connections for a specific row completely damaged,
+    # the code outputs a nan. This has to be a 0, because there is no spared connection, so the damage is 100%!
+    wmh_damage.iloc[:,] = np.nan_to_num(wmh_damage)
+    return wmh_damage.to_numpy()
