@@ -46,7 +46,7 @@ subjs = [k for k in all_fMRI_clean.keys()]
 CN, MCI, CN_no_WMH, CN_WMH, MCI_no_WMH, MCI_WMH = get_classification(subjs)
 
 # We only want to simulate with WMH-weighted models those patients that do have wmh
-subjs_to_sim = define_subjs_to_sim()
+subjs_to_sim = define_subjs_to_sim(CN_WMH, MCI_WMH)
 
 
 print("petTOAD Setup done!")

@@ -126,7 +126,7 @@ def get_classification(subjs):
     MCI = np.hstack([MCI_WMH, MCI_no_WMH])
     return CN, MCI, CN_no_WMH, CN_WMH, MCI_no_WMH, MCI_WMH
 
-def define_subjs_to_sim():
+def define_subjs_to_sim(CN_WMH, MCI_WMH):
     subjs_to_sim_pre = np.hstack([CN_WMH, MCI_WMH])
     df_petTOAD = pd.read_csv(RES_DIR / "df_petTOAD.csv")
     df_petTOAD["PTID"] = df_petTOAD["PTID"].str.replace("_", "")
@@ -171,10 +171,10 @@ def get_sc_wmh_weighted(subj):
     spared_sc_perc = spared_sc / 100
     return spared_sc_perc
 
-def get_node_damage(subj):
+def get_node_spared(subj):
     wmh_df = pd.read_csv(LQT_DIR / f"sub-{subj}" / "pct_spared_sc_matrix.csv", index_col = 0)    
-    wmh_damage = wmh_df[wmh_df != 0].mean(axis = 0) / 100
+    wmh_spared = wmh_df[wmh_df != 0].mean(axis = 0) / 100
     # For how the code is written now, if a subject has all its connections for a specific row completely damaged,
     # the code outputs a nan. This has to be a 0, because there is no spared connection, so the damage is 100%!
-    wmh_damage.iloc[:,] = np.nan_to_num(wmh_damage)
-    return wmh_damage.to_numpy()
+    wmh_spared.iloc[:,] = np.nan_to_num(wmh_spared)
+    return wmh_spared.to_numpy()
