@@ -63,7 +63,9 @@ def gaussfilt(t,z,sigma):
 
 def filtPowSpetra(signal, TR):
     nNodes, Tmax = signal.shape  # Here we are assuming we receive only ONE subject...
-    ts_filt_narrow = BOLDFilters.BandPassFilter(signal, removeStrongArtefacts=False)
+    # Since we work with bandpass-filtered signal from when we load it, we don't do it again
+    # This is just to keep Gustavo's code structure for future reference
+    ts_filt_narrow = signal    #ts_filt_narrow = BOLDFilters.BandPassFilter(signal, removeStrongArtefacts=False)
     pw_filt_narrow = np.abs(np.fft.fft(ts_filt_narrow, axis=1))
     PowSpect_filt_narrow = pw_filt_narrow[:, 0:int(np.floor(Tmax/2))].T**2 / (Tmax/TR)
     return PowSpect_filt_narrow
@@ -85,8 +87,9 @@ def filtPowSpetraMultipleSubjects(signal, TR):
     Power_Areas_filt_narrow_smoothed = np.zeros_like(Power_Areas_filt_narrow_unsmoothed)
     Ts = Tmax * TR
     freqs = np.arange(0,Tmax/2-1)/Ts
-    for seed in np.arange(nNodes):
-        Power_Areas_filt_narrow_smoothed[:,seed] = gaussfilt(freqs, Power_Areas_filt_narrow_unsmoothed[:,seed], 0.01)
+    # The smoothing is too much for our dataset and we lose all the regional variability so we work with unsmoothed data
+    # for seed in np.arange(nNodes):
+    #     Power_Areas_filt_narrow_smoothed[:,seed] = gaussfilt(freqs, Power_Areas_filt_narrow_unsmoothed[:,seed], 0.01)
     idxFreqOfMaxPwr = np.argmax(Power_Areas_filt_narrow_unsmoothed, axis=0)
     f_diff = freqs[idxFreqOfMaxPwr]
     return f_diff

@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""     Extract the WMH volumes -- Version 1.0
-Last edit:  2023/03/20
+"""     Extract the WMH volumes -- Version 1.1
+Last edit:  2023/08/
 Authors:    Leone, Riccardo (RL)
-Notes:      - Initial release 
+Notes:      - ... 
             - Release notes:
-                * None
+                * Removed MNI space since we never use it, so the df is more clean
+                * Change names to new standard df_name
 To do:      - None
 Comments:   
 
@@ -35,6 +36,7 @@ WMH_RES_DIR = RES_DIR / "WMH_lesion_load"
 if not Path.is_dir(WMH_RES_DIR):
     Path.mkdir(WMH_RES_DIR)
 
+
 # Define useful functions
 def calculate_WMH_load_subj_space(subj):
     wmh_mask = layout.get(subject=subj, label="WMHMask", return_type="file")
@@ -46,54 +48,17 @@ def calculate_WMH_load_subj_space(subj):
         wmh_volume = 0
     return wmh_volume
 
-#%%
-def calculate_WMH_load_mni_space(subj):
-    wmh_mask_mni = WMH_DIR / f"sub-{subj}" / f"sub-{subj}_ses-M00_space-MNI152NLin6Asym_desc-fromSubjSpace.nii.gz"
-    try:
-        wmh_mni = nib.load(wmh_mask_mni)
-        wmh_volume_mni = np.round(nibstats.mask_volume(wmh_mni), 1)
-    except:
-        print(f"MNI mask not found for subj-{subj}")
-        wmh_volume_mni = 0    
-    return wmh_volume_mni
 
-#%%
 # Get the BIDS layout and subject list
 print("Loading the folder layout...")
 layout = BIDSLayout(WMH_DIR, validate=False, config=["bids", "derivatives"])
 subjs = layout.get_subjects()
-#%%
 # Calculate the WMH lesion load for each subj and store in pandas df
-global_WMH_df = pd.DataFrame()
-global_WMH_df["PTID"] = subjs
-#%%
+df_wmh = pd.DataFrame()
+df_wmh["PTID"] = subjs
 print("Calculating WMH lesion load in subject space...")
-global_WMH_df["WMH_load_subj_space"] = [
-    calculate_WMH_load_subj_space(subj) for subj in global_WMH_df["PTID"]
-]
-# %%
-print("Calculating WMH lesion load in mni space...")
-global_WMH_df["WMH_load_mni_space"] = [
-    calculate_WMH_load_mni_space(subj) for subj in global_WMH_df["PTID"]
+df_wmh["WMH_load_subj_space"] = [
+    calculate_WMH_load_subj_space(subj) for subj in df_wmh["PTID"]
 ]
 print("Done with WMH lesion load")
-#%%
-# Normalize the whole group in [0,1]
-print("Normalizing the WMH burden across all subjects in subject space...")
-global_WMH_df["WMH_load_norm_subj_space"] = np.round(
-    (global_WMH_df["WMH_load_subj_space"] - global_WMH_df["WMH_load_subj_space"].min())
-    / np.ptp(global_WMH_df["WMH_load_subj_space"]),
-    5,
-)
-
-print("Normalizing the WMH burden across all subjects in MNI space...")
-global_WMH_df["WMH_load_norm_mni_space"] = np.round(
-    (
-        global_WMH_df["WMH_load_mni_space"]
-        - global_WMH_df["WMH_load_mni_space"].min()
-    )
-    / np.ptp(global_WMH_df["WMH_load_mni_space"]),
-    5,
-)
-
 # %%

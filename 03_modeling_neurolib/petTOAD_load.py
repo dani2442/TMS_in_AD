@@ -35,14 +35,13 @@ XCP_DIR = PREP_DIR / "xcp_d"
 REL_SES = "M00"
 
 RES_DIR = SPINE / "results"
-if not Path.is_dir(RES_DIR):
-    Path.mkdir(RES_DIR)
-
+FIG_DIR = RES_DIR / "figures"
 LQT_DIR = RES_DIR / "LQT"
-
 SIM_DIR = RES_DIR / "final_simulations"
-if not Path.exists(SIM_DIR):
-    Path.mkdir(SIM_DIR)
+
+for my_dir in [RES_DIR, FIG_DIR, SIM_DIR]:
+    if not Path.exists(my_dir):
+        Path.mkdir(my_dir)
 
 # %% ~~ Load data ~~ %%#
 def get_layout_subjs():
@@ -154,7 +153,22 @@ def get_wmh_load_homogeneous(subjs):
     homo_wmh_dict = dict(
         zip(df_petTOAD["PTID"], round(df_petTOAD["WMH_load_subj_space_norm"], 3))
     )
+    return homo_wmh_dict
 
+def get_wmh_load_homogeneous_log(wmh_group):
+    df_petTOAD = pd.read_csv(RES_DIR / "df_petTOAD.csv")
+    df_petTOAD = df_petTOAD[df_petTOAD["PTID"].isin(wmh_group)]
+    df_petTOAD["wmh_log"] = np.log10(df_petTOAD["WMH_load_subj_space"])
+    df_petTOAD["wmh_log_norm"] = (df_petTOAD["wmh_log"] - df_petTOAD["wmh_log"].min()) / (df_petTOAD["wmh_log"].max() - ["wmh_log"].min())
+    homo_wmh_dict = dict(zip(df_petTOAD["PTID"], round(df_petTOAD["wmh_log_norm"], 3)))
+    return homo_wmh_dict
+
+def get_wmh_load_homogeneous_log(wmh_group):
+    df_petTOAD = pd.read_csv(RES_DIR / "df_petTOAD.csv")
+    df_petTOAD = df_petTOAD[df_petTOAD["PTID"].isin(wmh_group)]
+    df_petTOAD["wmh_log"] = np.log10(df_petTOAD["WMH_load_subj_space"])
+    df_petTOAD["wmh_log_norm"] = (df_petTOAD["wmh_log"] - df_petTOAD["wmh_log"].min()) / (df_petTOAD["wmh_log"].max() - ["wmh_log"].min())
+    homo_wmh_dict = dict(zip(df_petTOAD["PTID"], round(df_petTOAD["wmh_log_norm"], 3)))
     return homo_wmh_dict
 
 def get_wmh_load_random(subjs):
@@ -166,15 +180,60 @@ def get_wmh_load_random(subjs):
     wmh_dict_rand = {subj: round(arr_wmh_rand[i],3) for i, subj in enumerate(subjs)}
     return wmh_dict_rand
 
+def get_wmh_load_random_log(wmh_group):
+    df_petTOAD = pd.read_csv(RES_DIR / "df_petTOAD.csv")
+    df_petTOAD = df_petTOAD[df_petTOAD["PTID"].isin(wmh_group)]
+    df_petTOAD["wmh_log"] = np.log10(df_petTOAD["WMH_load_subj_space"])
+    df_petTOAD["wmh_log_norm"] = (df_petTOAD["wmh_log"] - df_petTOAD["wmh_log"].min()) / (df_petTOAD["wmh_log"].max() - ["wmh_log"].min())
+    df_petTOAD['wmh_log_norm_shuffled'] = df_petTOAD.loc[:, "wmh_log_norm"].sample(frac=1, random_state = 1991).values
+    homo_wmh_dict = dict(zip(df_petTOAD["PTID"], round(df_petTOAD["wmh_log_norm_shuffled"], 3)))
+    return wmh_dict_rand
+
 def get_sc_wmh_weighted(subj):
     spared_sc = pd.read_csv(LQT_DIR / f"sub-{subj}" / "pct_spared_sc_matrix.csv", index_col = 0)
     spared_sc_perc = spared_sc / 100
     return spared_sc_perc
 
+def get_group_sc_wmh_weighted(group_name):
+    list_group_spared_sc_perc = []
+    for subj in CN_WMH:
+        spared_sc_perc = get_sc_wmh_weighted(subj)
+        list_group_spared_sc_perc.append(spared_sc_perc)
+    arr_group_spared_sc_perc = np.array(list_group_spared_sc_perc)
+    mean_group_spared_sc_perc = arr_group_spared_sc_perc.mean(axis = 0)
+    return mean_group_spared_sc_perc
+
 def get_node_spared(subj):
-    wmh_df = pd.read_csv(LQT_DIR / f"sub-{subj}" / "pct_spared_sc_matrix.csv", index_col = 0)    
-    wmh_spared = wmh_df[wmh_df != 0].mean(axis = 0) / 100
+    df_wmh_subj = pd.read_csv(LQT_DIR / f"sub-{subj}" / "pct_spared_sc_matrix.csv", index_col = 0)    
+    df_wmh_node_spared = df_wmh_subj[df_wmh_subj != 0].mean(axis = 0) / 100
     # For how the code is written now, if a subject has all its connections for a specific row completely damaged,
     # the code outputs a nan. This has to be a 0, because there is no spared connection, so the damage is 100%!
-    wmh_spared.iloc[:,] = np.nan_to_num(wmh_spared)
-    return wmh_spared.to_numpy()
+    df_wmh_node_spared.iloc[:,] = np.nan_to_num(df_wmh_node_spared)
+    return df_wmh_node_spared.to_numpy()
+
+def get_group_node_spared(group):
+    list_group_node_spared = []
+    for subj in group:
+        node_spared = get_node_spared(subj)
+        list_group_node_spared.append(node_spared)
+    arr_group_node_spared = np.array(list_group_node_spared)
+    mean_arr_group_node_spared = arr_group_node_spared.mean(axis=0)
+    return mean_arr_group_node_spared
+
+def get_node_spared_random(subj, cu_wmh, mci_wmh):
+    list_spared_all = []
+    if subj in cu_wmh:
+        subjs_spared = cu_wmh
+    elif subj in mci_wmh:
+        subjs_spared = mci_wmh    
+    for subj in subjs_spared:
+        df_wmh_subj = pd.read_csv(LQT_DIR / f"sub-{subj}" / "pct_spared_sc_matrix.csv", index_col = 0)    
+        df_wmh_node_spared = df_wmh_subj[df_wmh_subj != 0].mean(axis = 0) / 100
+        # For how the code is written now, if a subject has all its connections for a specific row completely damaged,
+        # the code outputs a nan. This has to be a 0, because there is no spared connection, so the damage is 100%!
+        df_wmh_node_spared.iloc[:,] = np.nan_to_num(df_wmh_node_spared)
+        list_spared_all.append(df_wmh_node_spared)
+    node_spared_arr = np.array(list_spared_all).flatten() 
+    np.random.seed(1991)
+    wmh_node_spared_rand = np.random.choice(node_spared_arr, 90)
+    return wmh_node_spared_rand

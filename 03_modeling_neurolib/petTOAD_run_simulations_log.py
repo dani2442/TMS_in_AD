@@ -1,13 +1,12 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""   Model simulation with neurolib   -- Version 1.0
-Last edit:  2023/07/11
+"""   Model simulation with neurolib   -- Version 1.1
+Last edit:  2023/08/08
 Authors:    Leone, Riccardo (RL)
 Notes:      - Model simulation of the phenomenological Hopf model with Neurolib
             - Release notes:
-                * All together in one script
+                * Updated to run on HPC
 To do:      - Model with delay
-            - Change simulation time to the correct time
 Comments:   
 
 Sources: 
@@ -80,7 +79,6 @@ def calculate_results_from_bolds_subject(bold_arr, n_sim, n_parms, n_nodes):
                 print("Simulation has some nans, aborting!")
                 continue
             else:
-                print("Simulation has no nans, good to go")
                 print("Calculating FC..")
                 fc_value = func.fc(timeseries)
                 print("Calculating phFCD")
@@ -198,16 +196,16 @@ def simulate_homogeneous_model_a(
     parameters, filename = prepare_subject_simulation_homogeneous_a(
         subj, WMH, ws, bs, random_cond
     )
-    # for i in range(nsim):
-    #     print(f"Starting simulations n°: {i+1}/{nsim}")
-    #     # Initialize the search
-    #     search = BoxSearch(
-    #         model=model,
-    #         evalFunction=evaluate_subj,
-    #         parameterSpace=parameters,
-    #         filename=filename,
-    #     )
-    #     search.run(chunkwise=True, chunksize=60000, append=True)
+    for i in range(nsim):
+        print(f"Starting simulations n°: {i+1}/{nsim}")
+        # Initialize the search
+        search = BoxSearch(
+            model=model,
+            evalFunction=evaluate_subj,
+            parameterSpace=parameters,
+            filename=filename,
+        )
+        search.run(chunkwise=True, chunksize=60000, append=True)
     fc_pearson, phfcd_ks = gather_results_from_repeated_simulations(
         subj, savedir, filename, ws=ws, bs=bs
     )
@@ -264,86 +262,21 @@ def simulate_homogeneous_model_G(
     parameters, filename = prepare_subject_simulation_homogeneous_G(
         subj, WMH, ws, bs, random_cond
     )
-    # for i in range(nsim):
-    #     print(f"Starting simulations n°: {i+1}/{nsim}")
-    #     # Initialize the search
-    #     search = BoxSearch(
-    #         model=model,
-    #         evalFunction=evaluate_subj,
-    #         parameterSpace=parameters,
-    #         filename=filename,
-    #     )
-    #     search.run(chunkwise=True, chunksize=60000, append=True)
+
+    for i in range(nsim):
+        print(f"Starting simulations n°: {i+1}/{nsim}")
+        # Initialize the search
+        search = BoxSearch(
+            model=model,
+            evalFunction=evaluate_subj,
+            parameterSpace=parameters,
+            filename=filename,
+        )
+        search.run(chunkwise=True, chunksize=60000, append=True)
     fc_pearson, phfcd_ks = gather_results_from_repeated_simulations(
         subj, savedir, filename, ws=ws, bs=bs
     )
     create_df_results(subj, sim_dir, "homogeneous_G-weight", ws, bs, fc_pearson, phfcd_ks)
-
-
-###########################################################
-############### DISCONNECTION MODEL #######################
-###########################################################
-
-
-def prepare_subject_simulation_disconn(model, subj):
-    sc = model.params.Cmat
-    disconn_sc = get_sc_wmh_weighted(subj)
-    disconn_sc = disconn_sc.to_numpy()
-    disconn_cmat = np.multiply(sc, disconn_sc)
-    # Define the parametere space to explore
-    parameters = ParameterSpace(
-        {
-            "Cmat": [disconn_cmat],
-        },
-        kind="grid",
-    )
-    filename = f"{subj}_sc_disconn_model.hdf"
-
-    return parameters, filename
-
-
-def simulate_disconn_model(subj, best_G, f_diff, random_cond, sim_dir, nsim):
-    global search
-    print(f"Now performing the simulations for the structural disconnectivity model...")
-    Dmat = np.zeros_like(sc)
-    # Initialize the model (neurolib wants a Dmat to initialize the mode,
-    # so we gave it an empty Dmat, which we also later cancel by setting it to None)
-    model = PhenoHopfModel(Cmat=sc, Dmat=Dmat)
-    model.params["Dmat"] = None
-    # Empirical fmri is 193 timepoints at TR=3s (9.65 min) + 2 min of initial warm up of the timeseries
-    model.params["duration"] = 11.65 * 60 * 1000
-    model.params["signalV"] = 0
-    model.params["dt"] = 0.1
-    model.params["sampling_dt"] = 10.0
-    model.params["sigma"] = 0.02
-    model.params["a"] = np.ones(n_nodes) * -0.02
-    model.params["K_gl"] = best_G
-    model.params["w"] = 2 * np.pi * f_diff
-
-    if not random_cond:
-        # Set the directory where to save results
-        savedir = str(sim_dir)
-        paths.HDF_DIR = savedir
-        parameters, filename = prepare_subject_simulation_disconn(model, subj)
-        for i in range(nsim):
-            print(f"Starting simulations n°: {i+1}/{nsim}")
-            # Initialize the search
-            search = BoxSearch(
-                model=model,
-                evalFunction=evaluate_subj,
-                parameterSpace=parameters,
-                filename=filename,
-            )
-            search.run(chunkwise=True, chunksize=60000, append=True)
-        fc_pearson, phfcd_ks = gather_results_from_repeated_simulations(
-            subj,
-            savedir,
-            filename,
-            disconn=True,
-        )
-        create_df_results_sc_disconn(sim_dir, fc_pearson, phfcd_ks)
-    else:
-        print("There is no random for the disconnectivity model! Moving on!")
 
 
 ###########################################################
@@ -418,9 +351,73 @@ def simulate_heterogeneous_model(
     fc_pearson, phfcd_ks = gather_results_from_repeated_simulations(
         subj, savedir, filename, ws=ws, bs=bs
     )
-    create_df_results(sim_dir, "heterogeneous", ws, bs, fc_pearson, phfcd_ks)
+    create_df_results(subj, sim_dir, "heterogeneous", ws, bs, fc_pearson, phfcd_ks)
 
 
+###########################################################
+############### DISCONNECTION MODEL #######################
+###########################################################
+
+
+def prepare_subject_simulation_disconn(model, subj):
+    sc = model.params.Cmat
+    disconn_sc = get_sc_wmh_weighted(subj)
+    disconn_sc = disconn_sc.to_numpy()
+    disconn_cmat = np.multiply(sc, disconn_sc)
+    # Define the parametere space to explore
+    parameters = ParameterSpace(
+        {
+            "Cmat": [disconn_cmat],
+        },
+        kind="grid",
+    )
+    filename = f"{subj}_sc_disconn_model.hdf"
+
+    return parameters, filename
+
+
+def simulate_disconn_model(subj, best_G, f_diff, random_cond, sim_dir, nsim):
+    global search
+    print(f"Now performing the simulations for the structural disconnectivity model...")
+    Dmat = np.zeros_like(sc)
+    # Initialize the model (neurolib wants a Dmat to initialize the mode,
+    # so we gave it an empty Dmat, which we also later cancel by setting it to None)
+    model = PhenoHopfModel(Cmat=sc, Dmat=Dmat)
+    model.params["Dmat"] = None
+    # Empirical fmri is 193 timepoints at TR=3s (9.65 min) + 2 min of initial warm up of the timeseries
+    model.params["duration"] = 11.65 * 60 * 1000
+    model.params["signalV"] = 0
+    model.params["dt"] = 0.1
+    model.params["sampling_dt"] = 10.0
+    model.params["sigma"] = 0.02
+    model.params["a"] = np.ones(n_nodes) * -0.02
+    model.params["K_gl"] = best_G
+    model.params["w"] = 2 * np.pi * f_diff
+
+    if not random_cond:
+        # Set the directory where to save results
+        savedir = str(sim_dir)
+        paths.HDF_DIR = savedir
+        parameters, filename = prepare_subject_simulation_disconn(model, subj)
+        for i in range(nsim):
+            print(f"Starting simulations n°: {i+1}/{nsim}")
+            # Initialize the search
+            search = BoxSearch(
+                model=model,
+                evalFunction=evaluate_subj,
+                parameterSpace=parameters,
+                filename=filename,
+            )
+            search.run(chunkwise=True, chunksize=60000, append=True)
+        fc_pearson, phfcd_ks = gather_results_from_repeated_simulations(
+            subj,
+            savedir,
+            filename,
+            disconn=True,
+        )
+        create_df_results_sc_disconn(sim_dir, fc_pearson, phfcd_ks)
+    else:
+        print("There is no random for the disconnectivity model! Moving on!")
 
 ###############################################################
 #### Define the subject on which to perform the simulation ####
@@ -430,7 +427,9 @@ subj = subjs_to_sim[id_subj]
 n_subjs = len(subjs_to_sim)
 n_sim = 20
 best_G = 1.9
-
+SIM_DIR = RES_DIR / "final_simulations_log_more_detailed"
+if not Path.exists(SIM_DIR):
+    Path.mkdir(SIM_DIR)
 ################################################################
 # Perform subject-wise simulations
 ################################################################
@@ -445,7 +444,7 @@ if __name__ == "__main__":
     print(f"SLURM ARRAY TASK: {id_subj} corresponds to subject {subj}")
     print(f"We are going to do {n_sim} simulations for subject {subj}...")
 
-    random_conditions = [False, True]
+    random_conditions = [False, True] 
 
     for random_value in random_conditions:
         if not random_value:
@@ -460,7 +459,7 @@ if __name__ == "__main__":
                 SIM_DIR
                 / f"heterogeneous_ws_{ws_min_het}-{ws_max_het}_bs_{bs_min_het}-{bs_max_het}"
             )
-            wmh_dict = get_wmh_load_homogeneous(subjs)
+            wmh_dict = get_wmh_load_homogeneous_log(subjs)
         else:
             SIM_DIR_A = (
                 SIM_DIR
@@ -475,7 +474,7 @@ if __name__ == "__main__":
                 SIM_DIR
                 / f"heterogeneous_ws_{ws_min_het}-{ws_max_het}_bs_{bs_min_het}-{bs_max_het}_random"
             )
-            wmh_dict = get_wmh_load_random(subjs)
+            wmh_dict = get_wmh_load_random_log(subjs_to_sim)
 
         sim_dir = [SIM_DIR_A, SIM_DIR_G, SIM_DIR_HET, SIM_DIR_SC]
         for path in sim_dir:
