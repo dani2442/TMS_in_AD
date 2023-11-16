@@ -18,7 +18,7 @@ from scipy import stats
 from scipy.signal import detrend
 
 import BOLDFilters as BOLDFilters
-from petTOAD_load import *
+from petTOAD_load_log import *
 
 # Get subjs names
 _, subjs = get_layout_subjs()

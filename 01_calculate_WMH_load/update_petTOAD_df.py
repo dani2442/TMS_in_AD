@@ -16,7 +16,7 @@ from extract_WMH_volumes import *
 
 #%%
 # Load csv files
-sel_pts = pd.read_csv(UTL_DIR / "ADNI_selected_pts.csv")
+sel_pts = pd.read_csv(UTL_DIR / "df_selected_pts.csv")
 wmh_check = pd.read_csv(UTL_DIR / "WMH_checklist.csv")
 adnimerge = pd.read_csv(UTL_DIR / "ADNIMERGE.csv")
 # wmh_check contains the final list of subjects (those for whom we have Fazekas score):

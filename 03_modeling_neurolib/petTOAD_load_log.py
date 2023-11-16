@@ -130,7 +130,6 @@ def define_subjs_to_sim(CN_WMH, MCI_WMH):
     subjs_to_sim_pre = np.hstack([CN_WMH, MCI_WMH])
     df_petTOAD = pd.read_csv(RES_DIR / "df_petTOAD.csv")
     df_petTOAD["PTID"] = df_petTOAD["PTID"].str.replace("_", "")
-    df_petTOAD = df_petTOAD[df_petTOAD["WMH_load_subj_space"] < 80000]
     df_petTOAD = df_petTOAD[df_petTOAD["PTID"].isin(subjs_to_sim_pre)]
     return df_petTOAD["PTID"].to_numpy()
 
@@ -144,7 +143,6 @@ def get_group_ts_for_freqs(group_list, all_fMRI_clean):
 def get_wmh_load_homogeneous(subjs):
     df_petTOAD = pd.read_csv(RES_DIR / "df_petTOAD.csv")
     df_petTOAD["PTID"] = df_petTOAD["PTID"].str.replace("_", "")
-    df_petTOAD = df_petTOAD[df_petTOAD["WMH_load_subj_space"] < 80000]
     df_petTOAD = df_petTOAD[df_petTOAD["PTID"].isin(subjs)]
     df_petTOAD["WMH_load_subj_space_norm"] = (
         df_petTOAD["WMH_load_subj_space"] - df_petTOAD["WMH_load_subj_space"].min()

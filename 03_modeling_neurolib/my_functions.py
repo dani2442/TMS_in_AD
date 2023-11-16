@@ -1,6 +1,6 @@
 import logging
 import numpy as np
-import scipy.signal
+import scipy.signal 
 import scipy.stats
 import numba
 import warnings
@@ -31,22 +31,31 @@ def kuramoto(traces, smoothing=0.0, distance=10, prominence=5):
     :return: Timeseries of Kuramoto order paramter
     :rtype: numpy.ndarray
     """
-    @numba.njit
-    def _estimate_phase(maximalist, n_times):
-        lastMax = 0
-        phases = np.empty((n_times), dtype=np.float64)
-        n = 0
-        for m in maximalist:
-            for t in range(lastMax, m):
-                # compute instantaneous phase
-                phi = 2 * np.pi * float(t - lastMax) / float(m - lastMax)
-                phases[n] = phi
-                n += 1
-            lastMax = m
-        phases[-1] = 2 * np.pi
-        return phases
-
-    @numba.njit
+    #@numba.njit
+    # def _estimate_phase(maximalist, n_times):
+    #     lastMax = 0
+    #     phases = np.empty((n_times), dtype=np.float64)
+    #     n = 0
+    #     for m in maximalist:
+    #         for t in range(lastMax, m):
+    #             # compute instantaneous phase
+    #             phi = 2 * np.pi * float(t - lastMax) / float(m - lastMax)
+    #             phases[n] = phi
+    #             n += 1
+    #         lastMax = m
+    #     phases[-1] = 2 * np.pi
+    #     return phases
+    def my_estimate_phase(ts):
+        N, Tmax = ts.shape
+        # Data structures we are going to need...
+        phases_emp = np.zeros([N, Tmax])
+        # Time-series of the phases
+        for n in range(N):
+            Xanalytic = scipy.signal.hilbert(ts[n, :])  # demean.demean
+            phases_emp[n, :] = np.angle(Xanalytic)
+        return phases_emp
+    
+    #@numba.njit
     def _estimate_r(ntraces, times, phases):
         kuramoto = np.empty((times), dtype=np.float64)
         for t in range(times):
@@ -58,22 +67,23 @@ def kuramoto(traces, smoothing=0.0, distance=10, prominence=5):
         return kuramoto
 
     nTraces, nTimes = traces.shape
-    phases = np.empty_like(traces)
-    for n in range(nTraces):
-        a = traces[n]
-        # find peaks
-        if smoothing > 0:
-            # smooth data
-            a = scipy.ndimage.filters.gaussian_filter(traces[n], smoothing)
-        maximalist = scipy.signal.find_peaks(a, distance=distance,
-                                             prominence=prominence)[0]
-        maximalist = np.append(maximalist, len(traces[n])-1).astype(int)
+    phases = my_estimate_phase(traces)
+    
+    # for n in range(nTraces):
+    #     a = traces[n]
+    #     # find peaks
+    #     if smoothing > 0:
+    #         # smooth data
+    #         a = scipy.ndimage.filters.gaussian_filter(traces[n], smoothing)
+    #     maximalist = scipy.signal.find_peaks(a, distance=distance,
+    #                                          prominence=prominence)[0]
+    #     maximalist = np.append(maximalist, len(traces[n])-1).astype(int)
 
-        if len(maximalist) > 1:
-            phases[n, :] = _estimate_phase(maximalist, nTimes)
-        else:
-            logging.warning("Kuramoto: No peaks found, returning 0.")
-            return 0
+    #     if len(maximalist) > 1:
+    #         phases[n, :] = _estimate_phase(maximalist, nTimes)
+    #     else:
+    #         logging.warning("Kuramoto: No peaks found, returning 0.")
+    #         return 0
     # determine kuramoto order paramter
     kuramoto = _estimate_r(nTraces, nTimes, phases)
     return kuramoto
