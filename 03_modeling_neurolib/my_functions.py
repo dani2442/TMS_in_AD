@@ -246,7 +246,7 @@ def phase_int_matrix(ts):
 # (accumulated over all participants). The KS distance quantifies the maximal difference between the cumulative
 # distribution WholeBrain of the 2 samples.
 
-def phFCD(ts, windowsize_phase = 3):  # Compute the FCD of an input BOLD signal
+def phFCD(ts, windowsize_phase = 3):  # Compute the ohFCD of an input BOLD signal
     """ 
     Computes the Phase Functional Connectivity Dynamics (phFCD) as defined in 
     Lopez-Gonzalez [2020] (https://doi.org/10.1038/s42003-021-02537-9)
@@ -413,7 +413,7 @@ def calc_and_save_group_stats(group, save_dir, **kwargs):
     import scipy.io as sio
     savename = save_dir / "group_stats.mat"
     try:
-        m = sio.loadmat(save_dir / savename)
+        m = sio.loadmat(savename)
         fc = m['fc']
         flat_fcd_arr = m['fcd']
         flat_phfcd_arr = m['phFCD']

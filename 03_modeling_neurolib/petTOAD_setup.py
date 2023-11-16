@@ -35,11 +35,14 @@ n_nodes = sc.shape[0]
 all_fMRI_raw = {subj: load_ts_aal(subj) for subj in subjs}
 # Check that the timeseries do not have regions with all zeros and return only OK subjs
 all_fMRI_raw = check_ts(all_fMRI_raw)
-# Filter, detrend, z-score the signal only for subjects with complete data
-all_fMRI_clean = {
-    subj: stats.zscore(detrend(BOLDFilters.BandPassFilter(sub_ts)), axis=1)
-    for subj, sub_ts in all_fMRI_raw.items()
-}
+
+all_fMRI_clean = {subj: BOLDFilters.BandPassFilter(sub_ts) for subj, sub_ts in all_fMRI_raw.items()}
+
+# Demean, detrend, filter (inside BandPassFilter function), then z-score the signal
+# all_fMRI_clean = {
+#     subj: stats.zscore(BOLDFilters.BandPassFilter(sub_ts), axis=1)
+#     for subj, sub_ts in all_fMRI_raw.items()
+# }
 # New subject list overwrites the old one
 subjs = [k for k in all_fMRI_clean.keys()]
 # Get subject list for each condition
@@ -47,6 +50,5 @@ CN, MCI, CN_no_WMH, CN_WMH, MCI_no_WMH, MCI_WMH = get_classification(subjs)
 
 # We only want to simulate with WMH-weighted models those patients that do have wmh
 subjs_to_sim = define_subjs_to_sim(CN_WMH, MCI_WMH)
-
 
 print("petTOAD Setup done!")
