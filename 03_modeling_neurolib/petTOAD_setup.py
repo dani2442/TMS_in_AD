@@ -13,7 +13,6 @@ Sources: filtPowSpectr abd BOLDFilters taken from Gustavo Patow's WholeBrain Cod
 """
 # %%
 # Imports
-import numpy as np
 from scipy import stats
 from scipy.signal import detrend
 

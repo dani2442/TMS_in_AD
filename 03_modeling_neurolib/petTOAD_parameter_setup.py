@@ -22,9 +22,9 @@ import numpy as np
 # homogeneous model and random model.
 # VERY IMPORTANT!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 # Be sure to include w = 0 and b = 0, because this would be the baseline model!!!
-ws_min_a = -0.05
+ws_min_a = -0.1
 ws_max_a = 0.0
-bs_min_a = -0.025
+bs_min_a = -0.05
 bs_max_a = 0.0
 # Set the number of parameters you want your min-max interval to be split into (remember that the n
 # of simulations is equal to n_ws_a * n_bs_a, so make it reasonable to the type of PC/HPC you are running
@@ -54,9 +54,9 @@ bs_G = np.linspace(bs_min_G, bs_max_G, n_bs_G)
 #  Set the exploration values for the heterogeneous model
 # Set the minimum and maximum values of w and b you want to explore for the coupling parameter
 # heterogeneous model and random model (should be the same as the homogenous a-weighted model)
-ws_min_het = -0.05
+ws_min_het = -0.1
 ws_max_het = 0.0
-bs_min_het = -0.025
+bs_min_het = -0.05
 bs_max_het = 0.0
 # Set the number of parameters you want your min-max interval to be split into 
 n_ws_het = 21

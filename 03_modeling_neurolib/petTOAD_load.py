@@ -126,12 +126,8 @@ def get_classification(subjs):
     return CN, MCI, CN_no_WMH, CN_WMH, MCI_no_WMH, MCI_WMH
 
 def define_subjs_to_sim(CN_WMH, MCI_WMH):
-    subjs_to_sim_pre = np.hstack([CN_WMH, MCI_WMH])
-    df_petTOAD = pd.read_csv(RES_DIR / "df_petTOAD.csv")
-    df_petTOAD["PTID"] = df_petTOAD["PTID"].str.replace("_", "")
-    df_petTOAD = df_petTOAD[df_petTOAD["WMH_load_subj_space"] < 80000]
-    df_petTOAD = df_petTOAD[df_petTOAD["PTID"].isin(subjs_to_sim_pre)]
-    return df_petTOAD["PTID"].to_numpy()
+    return np.hstack([CN_WMH, MCI_WMH])
+    
 
 def get_group_ts_for_freqs(group_list, all_fMRI_clean):
 
@@ -159,15 +155,7 @@ def get_wmh_load_homogeneous_log(wmh_group):
     df_petTOAD = pd.read_csv(RES_DIR / "df_petTOAD.csv")
     df_petTOAD = df_petTOAD[df_petTOAD["PTID"].isin(wmh_group)]
     df_petTOAD["wmh_log"] = np.log10(df_petTOAD["WMH_load_subj_space"])
-    df_petTOAD["wmh_log_norm"] = (df_petTOAD["wmh_log"] - df_petTOAD["wmh_log"].min()) / (df_petTOAD["wmh_log"].max() - ["wmh_log"].min())
-    homo_wmh_dict = dict(zip(df_petTOAD["PTID"], round(df_petTOAD["wmh_log_norm"], 3)))
-    return homo_wmh_dict
-
-def get_wmh_load_homogeneous_log(wmh_group):
-    df_petTOAD = pd.read_csv(RES_DIR / "df_petTOAD.csv")
-    df_petTOAD = df_petTOAD[df_petTOAD["PTID"].isin(wmh_group)]
-    df_petTOAD["wmh_log"] = np.log10(df_petTOAD["WMH_load_subj_space"])
-    df_petTOAD["wmh_log_norm"] = (df_petTOAD["wmh_log"] - df_petTOAD["wmh_log"].min()) / (df_petTOAD["wmh_log"].max() - ["wmh_log"].min())
+    df_petTOAD["wmh_log_norm"] = (df_petTOAD["wmh_log"] - df_petTOAD["wmh_log"].min()) / (df_petTOAD["wmh_log"].max() - df_petTOAD["wmh_log"].min())
     homo_wmh_dict = dict(zip(df_petTOAD["PTID"], round(df_petTOAD["wmh_log_norm"], 3)))
     return homo_wmh_dict
 
@@ -184,56 +172,77 @@ def get_wmh_load_random_log(wmh_group):
     df_petTOAD = pd.read_csv(RES_DIR / "df_petTOAD.csv")
     df_petTOAD = df_petTOAD[df_petTOAD["PTID"].isin(wmh_group)]
     df_petTOAD["wmh_log"] = np.log10(df_petTOAD["WMH_load_subj_space"])
-    df_petTOAD["wmh_log_norm"] = (df_petTOAD["wmh_log"] - df_petTOAD["wmh_log"].min()) / (df_petTOAD["wmh_log"].max() - ["wmh_log"].min())
+    df_petTOAD["wmh_log_norm"] = (df_petTOAD["wmh_log"] - df_petTOAD["wmh_log"].min()) / (df_petTOAD["wmh_log"].max() - df_petTOAD["wmh_log"].min())
     df_petTOAD['wmh_log_norm_shuffled'] = df_petTOAD.loc[:, "wmh_log_norm"].sample(frac=1, random_state = 1991).values
     homo_wmh_dict = dict(zip(df_petTOAD["PTID"], round(df_petTOAD["wmh_log_norm_shuffled"], 3)))
-    return wmh_dict_rand
+    return homo_wmh_dict
 
-def get_sc_wmh_weighted(subj):
-    spared_sc = pd.read_csv(LQT_DIR / f"sub-{subj}" / "pct_spared_sc_matrix.csv", index_col = 0)
-    spared_sc_perc = spared_sc / 100
-    return spared_sc_perc
+def get_sc_wmh_weighted(subj, is_random):
+    damage_sc_perc = pd.read_csv(LQT_DIR / f"sub-{subj}" / "pct_sdc_matrix.csv", index_col = 0).to_numpy()
+    damage_sc = damage_sc_perc / 100
+    if is_random:
+        sc_normal = load_norm_aal_sc()
+        # Find the indices where the sc values are above 0 (where there are connections)
+        indices = np.where(sc_normal > 0)
+        # Get the damage at those indices
+        values_above_zero = damage_sc[indices]
+        # Shuffle the values
+        np.random.shuffle(values_above_zero)
+        # Assign the shuffled values back to the original array
+        damage_sc[indices] = values_above_zero
+    return damage_sc
 
-def get_group_sc_wmh_weighted(group_name):
+def get_group_sc_wmh_weighted(group_list):
     list_group_spared_sc_perc = []
-    for subj in CN_WMH:
+    for subj in group_list:
         spared_sc_perc = get_sc_wmh_weighted(subj)
         list_group_spared_sc_perc.append(spared_sc_perc)
     arr_group_spared_sc_perc = np.array(list_group_spared_sc_perc)
     mean_group_spared_sc_perc = arr_group_spared_sc_perc.mean(axis = 0)
     return mean_group_spared_sc_perc
 
-def get_node_spared(subj):
-    df_wmh_subj = pd.read_csv(LQT_DIR / f"sub-{subj}" / "pct_spared_sc_matrix.csv", index_col = 0)    
-    df_wmh_node_spared = df_wmh_subj[df_wmh_subj != 0].mean(axis = 0) / 100
-    # For how the code is written now, if a subject has all its connections for a specific row completely damaged,
-    # the code outputs a nan. This has to be a 0, because there is no spared connection, so the damage is 100%!
-    df_wmh_node_spared.iloc[:,] = np.nan_to_num(df_wmh_node_spared)
-    return df_wmh_node_spared.to_numpy()
+def get_node_damage(subj, is_random):
+    df_discon = pd.read_csv(LQT_DIR / "dataframes" / "parc_discon.csv", index_col = 0)
+    df_discon.index = [sub_name[1] for sub_name in df_discon["ID"].str.split("-")]
+    df_discon = df_discon.drop(columns=["ID"])
+    arr_wmh_damage = df_discon.loc[subj, :].to_numpy()
+    if is_random:
+        arr_wmh_damage = np.roll(arr_wmh_damage, shift = 45)
+    return arr_wmh_damage
 
-def get_group_node_spared(group):
+def get_group_node_damage(group, is_random):
     list_group_node_spared = []
     for subj in group:
-        node_spared = get_node_spared(subj)
+        node_spared = get_node_damage(subj, is_random)
         list_group_node_spared.append(node_spared)
     arr_group_node_spared = np.array(list_group_node_spared)
     mean_arr_group_node_spared = arr_group_node_spared.mean(axis=0)
     return mean_arr_group_node_spared
 
-def get_node_spared_random(subj, cu_wmh, mci_wmh):
-    list_spared_all = []
-    if subj in cu_wmh:
-        subjs_spared = cu_wmh
-    elif subj in mci_wmh:
-        subjs_spared = mci_wmh    
-    for subj in subjs_spared:
-        df_wmh_subj = pd.read_csv(LQT_DIR / f"sub-{subj}" / "pct_spared_sc_matrix.csv", index_col = 0)    
-        df_wmh_node_spared = df_wmh_subj[df_wmh_subj != 0].mean(axis = 0) / 100
-        # For how the code is written now, if a subject has all its connections for a specific row completely damaged,
-        # the code outputs a nan. This has to be a 0, because there is no spared connection, so the damage is 100%!
-        df_wmh_node_spared.iloc[:,] = np.nan_to_num(df_wmh_node_spared)
-        list_spared_all.append(df_wmh_node_spared)
-    node_spared_arr = np.array(list_spared_all).flatten() 
-    np.random.seed(1991)
-    wmh_node_spared_rand = np.random.choice(node_spared_arr, 90)
-    return wmh_node_spared_rand
+# def get_node_spared(subj):
+#     df_wmh_subj = pd.read_csv(LQT_DIR / f"sub-{subj}" / "pct_spared_sc_matrix.csv", index_col = 0)    
+#     df_wmh_node_spared = df_wmh_subj[df_wmh_subj != 0].mean(axis = 0) / 100
+#     # For how the code is written now, if a subject has all its connections for a specific row completely damaged,
+#     # the code outputs a nan. This has to be a 0, because there is no spared connection, so the damage is 100%!
+#     df_wmh_node_spared.iloc[:,] = np.nan_to_num(df_wmh_node_spared)
+#     return df_wmh_node_spared.to_numpy()
+
+# def get_node_spared_random(subj, cu_wmh, mci_wmh):
+#     list_spared_all = []
+#     if subj in cu_wmh:
+#         subjs_spared = cu_wmh
+#     elif subj in mci_wmh:
+#         subjs_spared = mci_wmh    
+#     for subj in subjs_spared:
+#         df_wmh_subj = pd.read_csv(LQT_DIR / f"sub-{subj}" / "pct_spared_sc_matrix.csv", index_col = 0)    
+#         df_wmh_node_spared = df_wmh_subj[df_wmh_subj != 0].mean(axis = 0) / 100
+#         # For how the code is written now, if a subject has all its connections for a specific row completely damaged,
+#         # the code outputs a nan. This has to be a 0, because there is no spared connection, so the damage is 100%!
+#         df_wmh_node_spared.iloc[:,] = np.nan_to_num(df_wmh_node_spared)
+#         list_spared_all.append(df_wmh_node_spared)
+#     node_spared_arr = np.array(list_spared_all).flatten() 
+#     np.random.seed(1991)
+#     wmh_node_spared_rand = np.random.choice(node_spared_arr, 90)
+#     return wmh_node_spared_rand
+#%%
+_, subjs = get_layout_subjs()
