@@ -13,38 +13,19 @@ from statannotations.Annotator import Annotator
 import my_functions as my_func
 from phFCD import *
 from petTOAD_setup import *
-from petTOAD_group_level_simulations import *
 from integration import IntegrationFromFC_Fast
 from segregation import computeSegregation
-
-
-# Directories
-SPINE = Path.cwd().parents[2]
-DATA_DIR = SPINE / "data"
-PREP_DIR = DATA_DIR / "preprocessed"
-FPRP_DIR = PREP_DIR / "fmriprep"
-UTL_DIR = DATA_DIR / "utils"
-WMH_DIR = PREP_DIR / "WMH_segmentation"
-XCP_DIR = PREP_DIR / "xcp_d"
-
-REL_SES = "M00"
-
-RES_DIR = SPINE / "results"
-FIG_DIR = RES_DIR / "figures"
-LQT_DIR = RES_DIR / "LQT"
-SIM_DIR = RES_DIR / "final_simulations"
-
 
 
 
 def load_df_arrays(groupname, model):
     df_group = pd.read_csv(
-        SIM_DIR / groupname / f"group-{groupname}_model-{model}_desc-df-fitting-results.csv",
+        SIM_GROUP_DIR / groupname / f"group-{groupname}_model-{model}_desc-df-fitting-results.csv",
         index_col=[0],
         header=[0],
     )
     arr_fc_phfcd = np.load(
-        SIM_DIR
+        SIM_GROUP_DIR
         / groupname
         / f"group-{groupname}_data-simulated_model-{model}_desc-fc-phfcd-arr.npz"
     )
@@ -161,7 +142,7 @@ def run_montecarlo_model_comparisons(groupname, grouplist, n_rep, no_wmh_best_a=
     }
 
     np.savez_compressed(
-        SIM_DIR
+        SIM_GROUP_DIR
         / groupname
         / f"group-{groupname}_data-simulated_model-all_desc-ksd-comparison-with-empirical-montecarlo-{n_rep}-repeats.npz",
         **data_to_save,
@@ -211,7 +192,7 @@ def run_montecarlo_model_comparisons(groupname, grouplist, n_rep, no_wmh_best_a=
 
     df_best_values = pd.DataFrame(dict_best_values)
     df_best_values.to_csv(
-        SIM_DIR
+        SIM_GROUP_DIR
         / groupname
         / f"group-{groupname}_data-empirical_model-all_desc-df-best-values-and-indices.csv"
     )
@@ -236,7 +217,7 @@ def run_montecarlo_model_comparisons(groupname, grouplist, n_rep, no_wmh_best_a=
         columns={"variable": "model", "value": "phfcd_ks"}
     )
     df_compare_boxplot_melted.to_csv(
-        SIM_DIR
+        SIM_GROUP_DIR
         / groupname
         / f"group-{groupname}_data-simulated_model-all_desc-df-long-for-boxplots.csv"
     )
@@ -356,11 +337,11 @@ def create_and_save_int_seg_df(integrations, segregations, n_repeats):
     df_int = pd.DataFrame(integrations).melt(var_name="group", value_name="Integration")
     df_seg = pd.DataFrame(segregations).melt(var_name="group", value_name="Segregation")
     df_int.to_csv(
-        SIM_DIR
+        SIM_GROUP_DIR
         / f"group-all_data-empirical_desc-df-integration-montecarlo-{n_repeats}-repeats.csv"
     )
     df_seg.to_csv(
-        SIM_DIR
+        SIM_GROUP_DIR
         / f"group-all_data-empirical_desc-df-segregation-montecarlo-{n_repeats}-repeats.csv"
     )
     return df_int, df_seg
@@ -523,11 +504,11 @@ def run_montecarlo_int_seg_simulated(
         segregations, "Segregation", n_sim=n_rep
     )
     df_int_long.to_csv(
-        SIM_DIR
+        SIM_GROUP_DIR
         / f"group-all_data-simulated_model-all_desc-df-integration-montecarlo-{n_rep}-repeats.csv"
     )
     df_seg_long.to_csv(
-        SIM_DIR
+        SIM_GROUP_DIR
         / f"group-all_data-simulated_model-all_desc-df-segregation-montecarlo-{n_rep}-repeats.csv"
     )
     # plot_all_int_seg_comparisons_simulated(df_int_long, df_seg_long)
@@ -556,12 +537,11 @@ def save_dict_best_values(group1_best_G_idx,
     }
 
     df_best = pd.DataFrame(dict_best, index=[0])
-    df_best.to_csv(SIM_DIR / "group-all_data-simulated_model-all_df-best_indices.csv")
+    df_best.to_csv(SIM_GROUP_DIR / "group-all_data-simulated_model-all_df-best_indices.csv")
 
 ########################################################
 
 def main():
-    #run_group_level_simulations(group_dict, model_types_per_group)
     cn_no_wmh_best_G, cn_no_wmh_best_G_idx = get_best_G_cn_no_wmh()
     mci_no_wmh_best_a, mci_no_wmh_best_a_idx = get_best_a_mci_no_wmh()
     (
@@ -684,7 +664,7 @@ if __name__ == "__main__":
 #         dict_res[dict_key] = res.data.formatted_output.split(",")[1]
 #     test_name = res.data.formatted_output.split(",")[0]
 #     df = pd.DataFrame(dict_res, index = [test_name]).T
-#     df.to_csv(SIM_DIR / f"group-{groupname}_df_{comparing_what}_desc-comparison.csv")
+#     df.to_csv(SIM_GROUP_DIR / f"group-{groupname}_df_{comparing_what}_desc-comparison.csv")
 
 
 # def plot_model_comparison(groupname, df, obs, ax):

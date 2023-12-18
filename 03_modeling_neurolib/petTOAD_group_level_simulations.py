@@ -291,7 +291,7 @@ def create_df_results(model_type, parameters, fc_pearson, phfcd_ks, savedir, gro
         res_df = create_df_results_homo(parm_name, parms, fc_pearson, phfcd_ks, savedir, group)
         if group == "CN_no_WMH":
             best_G = res_df[res_df["phfcd_ks"] == res_df["phfcd_ks"].min()]["K_gl"]
-            best_G.to_csv(SIM_DIR / "group-CN-no-WMH_desc-best-G.csv")
+            best_G.to_csv(SIM_GROUP_DIR / "group-CN-no-WMH_desc-best-G.csv")
         return parm_name, res_df
 
     # elif model_type == "disconn":
@@ -320,7 +320,7 @@ def create_df_results(model_type, parameters, fc_pearson, phfcd_ks, savedir, gro
 def simulate_group(group, grouplist, fdiff, G, nsim, model_type):
     global search
     # Set the directory where to save results
-    savedir = str(SIM_DIR / group)
+    savedir = str(SIM_GROUP_DIR / group)
     paths.HDF_DIR = savedir
     print(f"Now performing the simulations for the {group} group, model: {model_type}")
     model = initialize_Hopf(fdiff)
@@ -355,7 +355,7 @@ def run_group_level_simulations(groupdict, dict_model_types_group):
             if group_name == "CN_no_WMH":
                 G = 3.5
             else:
-                np_G = pd.read_csv(SIM_DIR / "group-CN-no-WMH_desc-best-G.csv")["K_gl"][0]
+                np_G = pd.read_csv(SIM_GROUP_DIR / "group-CN-no-WMH_desc-best-G.csv")["K_gl"][0]
                 G = float(np_G)
             simulate_group(group_name, group_list, fdiff, G, nsim, model_type)
 

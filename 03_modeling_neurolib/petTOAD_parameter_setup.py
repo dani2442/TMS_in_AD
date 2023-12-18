@@ -38,7 +38,7 @@ bs_a = np.linspace(bs_min_a, bs_max_a, n_bs_a)
 #  Set the exploration values for the homogeneous model of G
 # Set the minimum and maximum values of w and b you want to explore for the coupling parameter
 # homogeneous model and random model
-ws_min_G = -1.
+ws_min_G = -2
 ws_max_G = 0.
 bs_min_G = -0.5
 bs_max_G = 0.0
@@ -64,4 +64,13 @@ n_bs_het = 11
 # Create the final array with all the ws and bs you want to explore
 ws_het = np.linspace(ws_min_het, ws_max_het, n_ws_het)
 bs_het = np.linspace(bs_min_het, bs_max_het, n_bs_het)
-# %%
+# Set the exploration values for the disconnectivity model
+# Since the median value for the matrix is ~0, and we don't want to introduce
+# connections where they are not present, we set b = 0 and only fit the w.
+ws_min_disconn = -0.5
+ws_max_disconn = 0.0
+# Set the number of parameters you want your min-max interval to be split into 
+n_ws_disconn = 101
+# Create the final array with all the ws and bs you want to explore
+ws_disconn = np.linspace(ws_min_disconn, ws_max_disconn, n_ws_disconn)
+

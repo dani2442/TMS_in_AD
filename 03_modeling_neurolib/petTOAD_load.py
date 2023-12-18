@@ -37,9 +37,10 @@ REL_SES = "M00"
 RES_DIR = SPINE / "results"
 FIG_DIR = RES_DIR / "figures"
 LQT_DIR = RES_DIR / "LQT"
-SIM_DIR = RES_DIR / "final_simulations"
+SIM_DIR = RES_DIR / "final_simulations_log_2023-11-23"
+SIM_GROUP_DIR = RES_DIR / "final_simulations"
 
-for my_dir in [RES_DIR, FIG_DIR, SIM_DIR]:
+for my_dir in [RES_DIR, FIG_DIR, SIM_DIR, SIM_GROUP_DIR]:
     if not Path.exists(my_dir):
         Path.mkdir(my_dir)
 
@@ -192,10 +193,10 @@ def get_sc_wmh_weighted(subj, is_random):
         damage_sc[indices] = values_above_zero
     return damage_sc
 
-def get_group_sc_wmh_weighted(group_list):
+def get_group_sc_wmh_weighted(group_list, is_random):
     list_group_spared_sc_perc = []
     for subj in group_list:
-        spared_sc_perc = get_sc_wmh_weighted(subj)
+        spared_sc_perc = get_sc_wmh_weighted(subj, is_random=is_random)
         list_group_spared_sc_perc.append(spared_sc_perc)
     arr_group_spared_sc_perc = np.array(list_group_spared_sc_perc)
     mean_group_spared_sc_perc = arr_group_spared_sc_perc.mean(axis = 0)
@@ -245,4 +246,3 @@ def get_group_node_damage(group, is_random):
 #     wmh_node_spared_rand = np.random.choice(node_spared_arr, 90)
 #     return wmh_node_spared_rand
 #%%
-_, subjs = get_layout_subjs()

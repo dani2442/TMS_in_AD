@@ -27,7 +27,6 @@ from phFCD import *
 from petTOAD_parameter_setup import *
 from petTOAD_setup import *
 
-
 def get_f_diff_group(group):
     # Get the timeseries for the CN no WMH group
     group, timeseries = get_group_ts_for_freqs(group, all_fMRI_clean)
@@ -145,9 +144,11 @@ def create_df_results(subj, sim_dir, model, ws, bs, fc_pearson, phfcd_ks):
 
 
 def create_df_results_disconn(subj, sim_dir, ws, fc_pearson, phfcd_ks):
-    data = [[ws, fc_pearson, phfcd_ks]]
-    columns = ["w", "fc_pearson", "phfcd_ks"]
-    res_df = pd.DataFrame(data, columns=columns)
+    dict_res = {"w": ws,
+                "fc_pearson": fc_pearson,
+                "phfcd_ks": phfcd_ks,
+                }
+    res_df = pd.DataFrame(dict_res)
     res_df.to_csv(sim_dir / f"sub-{subj}_df_results_disconn.csv")
 
 
@@ -362,7 +363,7 @@ def prepare_subject_simulation_disconn(subj, model, ws, random_cond):
     # Define the parametere space to explore
     parameters = ParameterSpace(
         {
-            "Cmat": [sc * (1 - (damage_sc * w)) for w in ws],
+            "Cmat": [np.clip(sc + (damage_sc * w), 0, 1) for w in ws]
         },
         kind="grid",
     )
@@ -423,7 +424,8 @@ id_subj = int(sys.argv[1]) - 1
 subj = subjs_to_sim[id_subj]
 n_subjs = len(subjs_to_sim)
 n_sim = 20
-best_G = 1.98
+df_best_G = pd.read_csv(SIM_GROUP_DIR / "group-CN-no-WMH_desc-best-G.csv", index_col=0)
+best_G = float(df_best_G["K_gl"])
 SIM_DIR = RES_DIR / "final_simulations_log_2023-11-23"
 if not Path.exists(SIM_DIR):
     Path.mkdir(SIM_DIR)
@@ -467,12 +469,12 @@ if __name__ == "__main__":
                 SIM_DIR
                 / f"G-weight_ws_{ws_min_G}-{ws_max_G}_bs_{bs_min_G}-{bs_max_G}_random"
             )
-            SIM_DIR_SC = SIM_DIR / f"sc_disconn"
+            SIM_DIR_SC = SIM_DIR / f"sc_disconn_w_{ws_min_disconn}-{ws_max_disconn}_bs_0"
             SIM_DIR_HET = (
                 SIM_DIR
                 / f"heterogeneous_ws_{ws_min_het}-{ws_max_het}_bs_{bs_min_het}-{bs_max_het}_random"
             )
-            SIM_DIR_SC = SIM_DIR / f"sc_disconn_random"
+            SIM_DIR_SC = SIM_DIR / f"sc_disconn_w_{ws_min_disconn}-{ws_max_disconn}_bs_0_random"
             wmh_dict = get_wmh_load_random_log(subjs_to_sim)
 
         sim_dir = [SIM_DIR_A, SIM_DIR_G, SIM_DIR_HET, SIM_DIR_SC]
@@ -496,27 +498,29 @@ if __name__ == "__main__":
         #     sim_dir=SIM_DIR_A,
         #     nsim=n_sim,
         # )
-        # simulate_homogeneous_model_G(
-        #     subj=subj,
-        #     f_diff=f_diff,
-        #     wmh_dict=wmh_dict,
-        #     ws=ws_G,
-        #     bs=bs_G,
-        #     random_cond=random_value,
-        #     sim_dir=SIM_DIR_G,
-        #     nsim=n_sim,
-        # )
 
-        simulate_heterogeneous_model(
+        simulate_homogeneous_model_G(
             subj=subj,
             f_diff=f_diff,
-            best_G=best_G,
-            ws=ws_het,
-            bs=bs_het,
+            wmh_dict=wmh_dict,
+            ws=ws_G,
+            bs=bs_G,
             random_cond=random_value,
-            sim_dir=SIM_DIR_HET,
+            sim_dir=SIM_DIR_G,
             nsim=n_sim,
         )
+
+        # simulate_heterogeneous_model(
+        #     subj=subj,
+        #     f_diff=f_diff,
+        #     best_G=best_G,
+        #     ws=ws_het,
+        #     bs=bs_het,
+        #     random_cond=random_value,
+        #     sim_dir=SIM_DIR_HET,
+        #     nsim=n_sim,
+        # )
+        
         simulate_disconn_model(
             subj=subj,
             f_diff=f_diff,
@@ -526,6 +530,7 @@ if __name__ == "__main__":
             sim_dir=SIM_DIR_SC,
             nsim=n_sim,
         )
+
         print("The end.")
 
 # %%
