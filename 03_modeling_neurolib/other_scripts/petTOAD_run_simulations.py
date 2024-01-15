@@ -1,12 +1,13 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""   Model simulation with neurolib   -- Version 1.1
-Last edit:  2023/08/08
+"""   Model simulation with neurolib   -- Version 1.0
+Last edit:  2023/07/11
 Authors:    Leone, Riccardo (RL)
 Notes:      - Model simulation of the phenomenological Hopf model with Neurolib
             - Release notes:
-                * Updated to run on HPC
+                * All together in one script
 To do:      - Model with delay
+            - Change simulation time to the correct time
 Comments:   
 
 Sources: 
@@ -15,6 +16,7 @@ Sources:
 import sys
 
 import matplotlib.pyplot as plt
+import neurolib.utils.functions as func
 from neurolib.models.pheno_hopf import PhenoHopfModel
 from neurolib.optimize.exploration import BoxSearch
 from neurolib.utils import paths
@@ -23,9 +25,9 @@ from neurolib.utils.parameterSpace import ParameterSpace
 
 import filteredPowerSpectralDensity as filtPowSpectr
 import my_functions as my_func
-from phFCD import *
 from petTOAD_parameter_setup import *
 from petTOAD_setup import *
+
 
 def get_f_diff_group(group):
     # Get the timeseries for the CN no WMH group
@@ -62,7 +64,7 @@ def evaluate_subj(traj):
 def calculate_results_from_bolds_subject(bold_arr, n_sim, n_parms, n_nodes):
     # Create a new array to store the FC and phFCD values with the same shape as bold array
     fc_array = np.zeros([n_sim, n_parms, n_nodes, n_nodes])
-    phfcd_array = np.zeros([n_sim, n_parms, 18336])
+    phfcd_array = np.zeros([n_sim, n_parms, 18145])
 
     # Iterate over each element in the bold array
     for i in range(n_sim):
@@ -78,10 +80,11 @@ def calculate_results_from_bolds_subject(bold_arr, n_sim, n_parms, n_nodes):
                 print("Simulation has some nans, aborting!")
                 continue
             else:
+                print("Simulation has no nans, good to go")
                 print("Calculating FC..")
-                fc_value = my_func.fc(timeseries)
+                fc_value = func.fc(timeseries)
                 print("Calculating phFCD")
-                phfcd_value = phFCD(timeseries)
+                phfcd_value = my_func.phFCD(timeseries)
                 # Store the FC and phFCD value in the corresponding position in the arrays
                 fc_array[i, j] = fc_value
                 phfcd_array[i, j] = phfcd_value
@@ -106,20 +109,20 @@ def gather_results_from_repeated_simulations(
     bold_arr = np.array(big_list)
     n_sim = len(trajs)
     if disconn:
-        n_parms = len(ws)
+        n_parms = 1
     else:
         n_parms = len(ws) * len(bs)
     fc_array, phfcd_array = calculate_results_from_bolds_subject(
         bold_arr, n_sim, n_parms, n_nodes
     )
     timeseries = all_fMRI_clean[subj]
-    fc = my_func.fc(timeseries)
+    fc = func.fc(timeseries)
     print("Calculating phFCD")
-    phfcd = phFCD(timeseries)
+    phfcd = my_func.phFCD(timeseries)
     # Get the average fc across the n simulations
     sim_fc = fc_array.mean(axis=0)
     print("Calculating fcs correlations...")
-    fc_pearson = [my_func.matrix_correlation(row_fc, fc) for row_fc in sim_fc]
+    fc_pearson = [func.matrix_correlation(row_fc, fc) for row_fc in sim_fc]
     print("Calculating phFCDs...")
     phfcd_ks = []
     for row in phfcd_array:
@@ -143,12 +146,10 @@ def create_df_results(subj, sim_dir, model, ws, bs, fc_pearson, phfcd_ks):
     res_df.to_csv(sim_dir / f"sub-{subj}_df_results_{model}.csv")
 
 
-def create_df_results_disconn(subj, sim_dir, ws, fc_pearson, phfcd_ks):
-    dict_res = {"w": ws,
-                "fc_pearson": fc_pearson,
-                "phfcd_ks": phfcd_ks,
-                }
-    res_df = pd.DataFrame(dict_res)
+def create_df_results_sc_disconn(sim_dir, fc_pearson, phfcd_ks):
+    data = [[fc_pearson, phfcd_ks]]
+    columns = ["fc_pearson", "phfcd_ks"]
+    res_df = pd.DataFrame(data, columns=columns).explode(columns)
     res_df.to_csv(sim_dir / f"sub-{subj}_df_results_disconn.csv")
 
 
@@ -197,16 +198,16 @@ def simulate_homogeneous_model_a(
     parameters, filename = prepare_subject_simulation_homogeneous_a(
         subj, WMH, ws, bs, random_cond
     )
-    for i in range(nsim):
-        print(f"Starting simulations n°: {i+1}/{nsim}")
-        # Initialize the search
-        search = BoxSearch(
-            model=model,
-            evalFunction=evaluate_subj,
-            parameterSpace=parameters,
-            filename=filename,
-        )
-        search.run(chunkwise=True, chunksize=60000, append=True)
+    # for i in range(nsim):
+    #     print(f"Starting simulations n°: {i+1}/{nsim}")
+    #     # Initialize the search
+    #     search = BoxSearch(
+    #         model=model,
+    #         evalFunction=evaluate_subj,
+    #         parameterSpace=parameters,
+    #         filename=filename,
+    #     )
+    #     search.run(chunkwise=True, chunksize=60000, append=True)
     fc_pearson, phfcd_ks = gather_results_from_repeated_simulations(
         subj, savedir, filename, ws=ws, bs=bs
     )
@@ -263,21 +264,86 @@ def simulate_homogeneous_model_G(
     parameters, filename = prepare_subject_simulation_homogeneous_G(
         subj, WMH, ws, bs, random_cond
     )
-
-    for i in range(nsim):
-        print(f"Starting simulations n°: {i+1}/{nsim}")
-        # Initialize the search
-        search = BoxSearch(
-            model=model,
-            evalFunction=evaluate_subj,
-            parameterSpace=parameters,
-            filename=filename,
-        )
-        search.run(chunkwise=True, chunksize=60000, append=True)
+    # for i in range(nsim):
+    #     print(f"Starting simulations n°: {i+1}/{nsim}")
+    #     # Initialize the search
+    #     search = BoxSearch(
+    #         model=model,
+    #         evalFunction=evaluate_subj,
+    #         parameterSpace=parameters,
+    #         filename=filename,
+    #     )
+    #     search.run(chunkwise=True, chunksize=60000, append=True)
     fc_pearson, phfcd_ks = gather_results_from_repeated_simulations(
         subj, savedir, filename, ws=ws, bs=bs
     )
     create_df_results(subj, sim_dir, "homogeneous_G-weight", ws, bs, fc_pearson, phfcd_ks)
+
+
+###########################################################
+############### DISCONNECTION MODEL #######################
+###########################################################
+
+
+def prepare_subject_simulation_disconn(model, subj):
+    sc = model.params.Cmat
+    disconn_sc = get_sc_wmh_weighted(subj)
+    disconn_sc = disconn_sc.to_numpy()
+    disconn_cmat = np.multiply(sc, disconn_sc)
+    # Define the parametere space to explore
+    parameters = ParameterSpace(
+        {
+            "Cmat": [disconn_cmat],
+        },
+        kind="grid",
+    )
+    filename = f"{subj}_sc_disconn_model.hdf"
+
+    return parameters, filename
+
+
+def simulate_disconn_model(subj, best_G, f_diff, random_cond, sim_dir, nsim):
+    global search
+    print(f"Now performing the simulations for the structural disconnectivity model...")
+    Dmat = np.zeros_like(sc)
+    # Initialize the model (neurolib wants a Dmat to initialize the mode,
+    # so we gave it an empty Dmat, which we also later cancel by setting it to None)
+    model = PhenoHopfModel(Cmat=sc, Dmat=Dmat)
+    model.params["Dmat"] = None
+    # Empirical fmri is 193 timepoints at TR=3s (9.65 min) + 2 min of initial warm up of the timeseries
+    model.params["duration"] = 11.65 * 60 * 1000
+    model.params["signalV"] = 0
+    model.params["dt"] = 0.1
+    model.params["sampling_dt"] = 10.0
+    model.params["sigma"] = 0.02
+    model.params["a"] = np.ones(n_nodes) * -0.02
+    model.params["K_gl"] = best_G
+    model.params["w"] = 2 * np.pi * f_diff
+
+    if not random_cond:
+        # Set the directory where to save results
+        savedir = str(sim_dir)
+        paths.HDF_DIR = savedir
+        parameters, filename = prepare_subject_simulation_disconn(model, subj)
+        for i in range(nsim):
+            print(f"Starting simulations n°: {i+1}/{nsim}")
+            # Initialize the search
+            search = BoxSearch(
+                model=model,
+                evalFunction=evaluate_subj,
+                parameterSpace=parameters,
+                filename=filename,
+            )
+            search.run(chunkwise=True, chunksize=60000, append=True)
+        fc_pearson, phfcd_ks = gather_results_from_repeated_simulations(
+            subj,
+            savedir,
+            filename,
+            disconn=True,
+        )
+        create_df_results_sc_disconn(sim_dir, fc_pearson, phfcd_ks)
+    else:
+        print("There is no random for the disconnectivity model! Moving on!")
 
 
 ###########################################################
@@ -306,14 +372,17 @@ def prepare_subject_simulation_heterogeneous(subj, node_damage, ws, bs, random_c
 
 
 def simulate_heterogeneous_model(
-    subj, f_diff, best_G, ws, bs, random_cond, sim_dir, nsim
+    subj, cn_wmh_arr, mci_wmh_arr, f_diff, best_G, ws, bs, random_cond, sim_dir, nsim
 ):
     global search
     print(f"Now performing the simulations for the heterogeneous model...")
     if not random_cond:
-        node_damage = get_node_damage(subj, is_random=False)
+        node_spared = get_node_spared(subj)
+        node_damage = 1 - node_spared
+
     else:
-        node_damage = get_node_damage(subj, is_random = True)
+        node_spared = get_node_spared_random(subj, cn_wmh_arr, mci_wmh_arr)
+        node_damage = 1 - node_spared
 
     # Set the directory where to save results
     savedir = str(sim_dir)
@@ -349,72 +418,8 @@ def simulate_heterogeneous_model(
     fc_pearson, phfcd_ks = gather_results_from_repeated_simulations(
         subj, savedir, filename, ws=ws, bs=bs
     )
-    create_df_results(subj, sim_dir, "heterogeneous", ws, bs, fc_pearson, phfcd_ks)
+    create_df_results(sim_dir, "heterogeneous", ws, bs, fc_pearson, phfcd_ks)
 
-
-###########################################################
-############### DISCONNECTION MODEL #######################
-###########################################################
-
-
-def prepare_subject_simulation_disconn(subj, model, ws, random_cond):
-    sc = model.params.Cmat
-    damage_sc = get_sc_wmh_weighted(subj, is_random = random_cond)
-    # Define the parametere space to explore
-    parameters = ParameterSpace(
-        {
-            "Cmat": [np.clip(sc + (damage_sc * w), 0, 1) for w in ws]
-        },
-        kind="grid",
-    )
-    if not random_cond:
-        filename = f"{subj}_sc_disconn_model.hdf"
-    else:
-        filename = f"{subj}_sc_disconn_model_random.hdf"
-
-    return parameters, filename
-
-
-def simulate_disconn_model(subj, f_diff, best_G, ws, random_cond, sim_dir, nsim):
-    global search
-    print(f"Now performing the simulations for the structural disconnectivity model...")
-    Dmat = np.zeros_like(sc)
-    # Initialize the model (neurolib wants a Dmat to initialize the mode,
-    # so we gave it an empty Dmat, which we also later cancel by setting it to None)
-    model = PhenoHopfModel(Cmat=sc, Dmat=Dmat)
-    model.params["Dmat"] = None
-    # Empirical fmri is 193 timepoints at TR=3s (9.65 min) + 2 min of initial warm up of the timeseries
-    model.params["duration"] = 11.65 * 60 * 1000
-    model.params["signalV"] = 0
-    model.params["dt"] = 0.1
-    model.params["sampling_dt"] = 10.0
-    model.params["sigma"] = 0.02
-    model.params["a"] = np.ones(n_nodes) * -0.02
-    model.params["K_gl"] = best_G
-    model.params["w"] = 2 * np.pi * f_diff
-
-    # Set the directory where to save results
-    savedir = str(sim_dir)
-    paths.HDF_DIR = savedir
-    parameters, filename = prepare_subject_simulation_disconn(subj, model, ws, random_cond)
-    for i in range(nsim):
-        print(f"Starting simulations n°: {i+1}/{nsim}")
-        # Initialize the search
-        search = BoxSearch(
-            model=model,
-            evalFunction=evaluate_subj,
-            parameterSpace=parameters,
-            filename=filename,
-        )
-        search.run(chunkwise=True, chunksize=60000, append=True)
-    fc_pearson, phfcd_ks = gather_results_from_repeated_simulations(
-        subj,
-        savedir,
-        filename,
-        ws=ws,
-        disconn=True,
-    )
-    create_df_results_disconn(subj, sim_dir, ws, fc_pearson, phfcd_ks)
 
 
 ###############################################################
@@ -424,27 +429,23 @@ id_subj = int(sys.argv[1]) - 1
 subj = subjs_to_sim[id_subj]
 n_subjs = len(subjs_to_sim)
 n_sim = 20
-df_best_G = pd.read_csv(SIM_GROUP_DIR / "group-CN-no-WMH_desc-best-G.csv", index_col=0)
-best_G = float(df_best_G["K_gl"])
-SIM_DIR = RES_DIR / "final_simulations_log_2023-11-23"
-if not Path.exists(SIM_DIR):
-    Path.mkdir(SIM_DIR)
-    
+best_G = 1.9
+
 ################################################################
 # Perform subject-wise simulations
 ################################################################
 if __name__ == "__main__":
-    # Get the frequencies for each group
+    # %% Get the frequencies for each group
     f_diff_CN_no_wmh = get_f_diff_group(CN_no_WMH)
     f_diff_CN_WMH = get_f_diff_group(CN_WMH)
     f_diff_MCI_no_WMH = get_f_diff_group(MCI_no_WMH)
     f_diff_MCI_WMH = get_f_diff_group(MCI_WMH)
 
 
-    #print(f"SLURM ARRAY TASK: {id_subj} corresponds to subject {subj}")
+    print(f"SLURM ARRAY TASK: {id_subj} corresponds to subject {subj}")
     print(f"We are going to do {n_sim} simulations for subject {subj}...")
 
-    random_conditions = [False, True] 
+    random_conditions = [False, True]
 
     for random_value in random_conditions:
         if not random_value:
@@ -454,12 +455,12 @@ if __name__ == "__main__":
             SIM_DIR_G = (
                 SIM_DIR / f"G-weight_ws_{ws_min_G}-{ws_max_G}_bs_{bs_min_G}-{bs_max_G}"
             )
-            SIM_DIR_SC = SIM_DIR / f"sc_disconn_ws_{ws_min_disconn}-{ws_max_disconn}_bs_None"
+            SIM_DIR_SC = SIM_DIR / f"sc_disconn"
             SIM_DIR_HET = (
                 SIM_DIR
                 / f"heterogeneous_ws_{ws_min_het}-{ws_max_het}_bs_{bs_min_het}-{bs_max_het}"
             )
-            wmh_dict = get_wmh_load_homogeneous_log(subjs_to_sim)
+            wmh_dict = get_wmh_load_homogeneous(subjs)
         else:
             SIM_DIR_A = (
                 SIM_DIR
@@ -469,12 +470,12 @@ if __name__ == "__main__":
                 SIM_DIR
                 / f"G-weight_ws_{ws_min_G}-{ws_max_G}_bs_{bs_min_G}-{bs_max_G}_random"
             )
+            SIM_DIR_SC = SIM_DIR / f"sc_disconn"
             SIM_DIR_HET = (
                 SIM_DIR
                 / f"heterogeneous_ws_{ws_min_het}-{ws_max_het}_bs_{bs_min_het}-{bs_max_het}_random"
             )
-            SIM_DIR_SC = SIM_DIR / f"sc_disconn_ws_{ws_min_disconn}-{ws_max_disconn}_bs_None_random"
-            wmh_dict = get_wmh_load_random_log(subjs_to_sim)
+            wmh_dict = get_wmh_load_random(subjs)
 
         sim_dir = [SIM_DIR_A, SIM_DIR_G, SIM_DIR_HET, SIM_DIR_SC]
         for path in sim_dir:
@@ -486,50 +487,46 @@ if __name__ == "__main__":
         elif subj in MCI_WMH:
             f_diff = f_diff_MCI_WMH
 
-        # simulate_homogeneous_model_a(
-        #     subj=subj,
-        #     f_diff=f_diff,
-        #     best_G=best_G,
-        #     wmh_dict=wmh_dict,
-        #     ws=ws_a,
-        #     bs=bs_a,
-        #     random_cond=random_value,
-        #     sim_dir=SIM_DIR_A,
-        #     nsim=n_sim,
-        # )
-
-        # simulate_homogeneous_model_G(
-        #     subj=subj,
-        #     f_diff=f_diff,
-        #     wmh_dict=wmh_dict,
-        #     ws=ws_G,
-        #     bs=bs_G,
-        #     random_cond=random_value,
-        #     sim_dir=SIM_DIR_G,
-        #     nsim=n_sim,
-        # )
-
-        # simulate_heterogeneous_model(
-        #     subj=subj,
-        #     f_diff=f_diff,
-        #     best_G=best_G,
-        #     ws=ws_het,
-        #     bs=bs_het,
-        #     random_cond=random_value,
-        #     sim_dir=SIM_DIR_HET,
-        #     nsim=n_sim,
-        # )
-        
-        simulate_disconn_model(
+        simulate_homogeneous_model_a(
             subj=subj,
             f_diff=f_diff,
             best_G=best_G,
-            ws = ws_disconn,
+            wmh_dict=wmh_dict,
+            ws=ws_a,
+            bs=bs_a,
+            random_cond=random_value,
+            sim_dir=SIM_DIR_A,
+            nsim=n_sim,
+        )
+        simulate_homogeneous_model_G(
+            subj=subj,
+            f_diff=f_diff,
+            wmh_dict=wmh_dict,
+            ws=ws_G,
+            bs=bs_G,
+            random_cond=random_value,
+            sim_dir=SIM_DIR_G,
+            nsim=n_sim,
+        )
+
+        simulate_heterogeneous_model(
+            subj=subj,
+            cn_wmh_arr=CN_WMH,
+            mci_wmh_arr=MCI_WMH,
+            f_diff=f_diff,
+            best_G=best_G,
+            ws=ws_het,
+            bs=bs_het,
+            random_cond=random_value,
+            sim_dir=SIM_DIR_HET,
+            nsim=n_sim,
+        )
+        simulate_disconn_model(
+            subj=subj,
+            best_G=best_G,
+            f_diff=f_diff,
             random_cond=random_value,
             sim_dir=SIM_DIR_SC,
             nsim=n_sim,
         )
-
-    print("The end.")
-
-# %%
+        print("The end.")

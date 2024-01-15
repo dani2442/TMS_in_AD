@@ -73,4 +73,3 @@ ws_max_disconn = 0.0
 n_ws_disconn = 101
 # Create the final array with all the ws and bs you want to explore
 ws_disconn = np.linspace(ws_min_disconn, ws_max_disconn, n_ws_disconn)
-

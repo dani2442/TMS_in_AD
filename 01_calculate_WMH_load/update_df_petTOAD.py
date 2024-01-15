@@ -69,25 +69,3 @@ df_petTOAD = df_sel_pts_new.drop(
 )
 # Save the shorter version
 df_petTOAD.to_csv(RES_DIR / "df_petTOAD.csv")
-
-
-# # Make a merged version of df_adnimerge with WMH data
-# df_sel_pts_new["VISCODE"] = df_sel_pts_new["VISCODE"].str.replace("v", "m")
-# df_sel_pts_new["VISCODE"] = df_sel_pts_new["VISCODE"].str.replace("sc", "bl")
-# df_sel_pts_new["VISCODE"] = df_sel_pts_new["VISCODE"].str.replace("init", "bl")
-# df_sel_pts_new["VISCODE"] = df_sel_pts_new["VISCODE"].str.replace("y1", "m12")
-# df_sel_pts_new["VISCODE"] = df_sel_pts_new["VISCODE"].str.replace("y2", "m24")
-
-# df_adnimerge["PTID"] = df_adnimerge["PTID"].str.replace("_", "")
-# df_adnimerge["PTID"] = "ADNI" + df_adnimerge["PTID"]
-# adni_new = pd.merge(df_adnimerge, df_sel_pts_new, on = ['PTID', 'VISCODE'])
-# adni_new.to_csv(RES_DIR / "adnimerge_petTOAD.csv")
-# # Not all patients that we processed have info on the df_adnimerge dataset!
-# # Nonetheless, the group to which they belong is reported on the ADNI website
-# pt_adni = adni_new['PTID'].to_numpy()
-# pt_sel = df_sel_pts_new['PTID'].to_numpy()
-# a = [f for f in pt_sel if f not in pt_adni]
-# help_df = df_sel_pts_new[df_sel_pts_new['PTID'].isin(a)][['PTID', 'EXAMDATE']]
-# # Save the list of patients with no df_adnimerge data
-# help_df.to_csv(RES_DIR / 'list_of_patients_with_no_adnimerge_data.csv')
-# %%
