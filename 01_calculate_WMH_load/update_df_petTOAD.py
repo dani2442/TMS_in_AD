@@ -48,7 +48,7 @@ df_sel_pts_dummy = pd.merge(df_sel_pts, df_wmh_check_final, on="PTID")
 # Merge subtypes of MCI into just MCI
 df_sel_pts_dummy["Group_bin"] = np.where(df_sel_pts_dummy["Group"] == "CN", "CN", "MCI")
 # Merge with df containing wmh lesion load
-df_sel_pts_new = pd.merge(df_sel_pts_dummy, df_wmh, on="PTID")
+df_sel_pts_new = pd.merge(df_sel_pts_dummy, df_wmh_check_final, on="PTID")
 # Apply a threshold based on Fazekas score <= 2
 # We calculated separate Fazekas for periventricular (0-3 points) and lobar (0-3 points)
 # for all subjects. Here we want to divide patients into a non-wmh group and a wmh group
