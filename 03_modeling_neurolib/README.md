@@ -13,10 +13,12 @@ The main scripts to run the simulations are (to be run in the following order):
 The following scripts are for analyses, plots and tables:
 
 - 2.0-analyze_empirical_data.ipynb --> creates:
-
+    Figures:
     - Fig. 3A (projections of wmh frequency);
     - Fig. 3B (distribution of phfcd in wmh vs. no wmh);
     - Suppl. Fig. 4 (correlation between wmh and tau and amyloid)
+    Tables:
+    - Suppl. Table 1 (table of demographics)
 
 - 2.1-analyze_single_subj_simulations.ipynb --> creates: 
 
