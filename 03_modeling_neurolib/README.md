@@ -1,9 +1,49 @@
-TO-DO: Expand on this!
+This folder contains the main code for simulation and analyses of the paper "In-vivo dynamical effects of structural white matter disconnections" by Riccardo Leone, Steven Geysen, Gustavo Deco and Xenia Kobeleva.
+
+### Simulation pipeline
+The main scripts to run the simulations are (to be run in the following order):
+
+- 1.0-group_level_simulations.py --> runs the simulation at a group level to find the best G, first to run
+- 1.1-find_plot_best_G.ipynb --> finds the best G tuned to healthy controls
+- 1.2-single_subjects_simulations.py --> starts from the previously found best G and runs the simulation at a single-subjec level for all models. The weights and biases can be set in the helper script petTOAD_parameter_setup.py (note that this script needs to be run with 1.3-run_single_subjs_sim.sh at the moment, but could easily be changed to accept a subject name)
+- 1.3-run_single_subjs_sim.sh --> launces slurm processing of the single subject simulations
 
 
-The project is structured into:
-- load.py: contains a lot of different functions to load stuff we are going to use in the analyses;
-- setup.py: contains some initial setup things like filtering timeseries and loading the structural connectivity;
-- group_level_simulations.py: runs the simulations at the group level (here you can modify the models that you want)
-- group_level_analysis.py: call group_level_simulations.py and then performs the comparisons between the different groups, as well as the evaluation of the group-level integration and segregation with Monte Carlo resampling 
-- group_level_plotting.ipynb: jupyter notebook for plotting
+### Analyses and plots
+The following scripts are for analyses, plots and tables:
+
+- 2.0-analyze_empirical_data.ipynb --> creates:
+
+    - Fig. 3A (projections of wmh frequency);
+    - Fig. 3B (distribution of phfcd in wmh vs. no wmh);
+    - Suppl. Fig. 4 (correlation between wmh and tau and amyloid)
+
+- 2.1-analyze_single_subj_simulations.ipynb --> creates: 
+
+    Figures:
+    - Fig 3C-D (boxplots of model performances + correlation plots of % improvement and wmh log);
+    - Fig. 4 (correlation plots of % improvement with clinical data with SDC models);
+    - Suppl. Fig. 4 (comparison with random models);
+    - Suppl. Fig. 5 (correlation plots of % improvement with clinical data with NDC models)
+    
+    Tables:
+    - Table 1 (table of model performance in all wmh and in high wmh only subjects)
+    - Table 2 (correlations between improvement in model performance compared to the baseline and clinical/demographic data)
+    - Suppl. Table 3 (model performance of random vs. non random models)
+
+
+### Helpers script
+We have several scripts helping with the simulations:
+
+- BOLDFilters.py (from https://github.com/dagush/WholeBrain)
+- demean.py (from https://github.com/dagush/WholeBrain)
+- filteredPowerSpectralDensity.py (from https://github.com/dagush/WholeBrain)
+- phFCD.py (from https://github.com/dagush/WholeBrain)
+- my_functions.py 
+- petTOAD_load.py
+- petTOAD_setup.py
+- petTOAD_parameter_setup.py
+
+And one containing all the functions helping with the analyses:
+
+- petTOAD_analyses_helpers.py

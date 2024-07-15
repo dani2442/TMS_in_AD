@@ -15,15 +15,7 @@ module load singularity
 
 # Set the paths to the Singularity container and Python script
 SINGULARITY_CONTAINER="/home/leoner/Projects/petTOAD/singims/neurolib.sif"
+SCRIPT="/home/leoner/Projects/petTOAD/scripts/TMS_in_AD/03_modeling_neurolib/petTOAD_single_subjects_simulations.py"
 
-# global=True
-
-# if [ "$global" = "False" ]; then
-#     SCRIPT="/home/leoner/petTOAD/scripts/TMS_in_AD/03_modeling_neurolib/petTOAD_run_simulations.py"
-# elif [ "$global" = "True" ]; then
-#     SCRIPT="/home/leoner/petTOAD/scripts/TMS_in_AD/03_modeling_neurolib/petTOAD_run_simulations_global_models.py"
-# fi
-
-SCRIPT="/home/leoner/Projects/petTOAD/scripts/TMS_in_AD/03_modeling_neurolib/petTOAD_run_simulations_log.py"
 # Run the Python script inside the Singularity container assignin the slurm_task_id which is used by the script to iterate over subjs
 singularity exec $SINGULARITY_CONTAINER python $SCRIPT $SLURM_ARRAY_TASK_ID

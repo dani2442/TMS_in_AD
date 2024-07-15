@@ -266,15 +266,15 @@ def run_group_level_simulations(groupdict, dict_model_types_group):
 ###############################################################################################
 group_dict = {
     "CN_no_WMH": CN_no_WMH,
-    "MCI_no_WMH": MCI_no_WMH,
-    "CN_WMH": CN_WMH,
-    "MCI_WMH": MCI_WMH,
+    # "MCI_no_WMH": MCI_no_WMH,
+    # "CN_WMH": CN_WMH,
+    # "MCI_WMH": MCI_WMH,
 }
 model_types_per_group = {
     "CN_no_WMH": ["homogeneous_G"],
-    "MCI_no_WMH": ["homogeneous_a"],
-    "CN_WMH": ["homogeneous_a", "homogeneous_G"], 
-    "MCI_WMH": ["homogeneous_a","homogeneous_G"], 
+    # "MCI_no_WMH": ["homogeneous_a"],
+    # "CN_WMH": ["homogeneous_a", "homogeneous_G"], 
+    # "MCI_WMH": ["homogeneous_a","homogeneous_G"], 
 }
 
 if __name__ == "__main__":

@@ -49,5 +49,6 @@ CN, MCI, CN_no_WMH, CN_WMH, MCI_no_WMH, MCI_WMH = get_classification(subjs)
 
 # We only want to simulate with WMH-weighted models those patients that do have wmh
 subjs_to_sim = define_subjs_to_sim(CN_WMH, MCI_WMH)
-
+df_subjs_to_sim = pd.Series(subjs_to_sim)
+df_subjs_to_sim.to_csv(RES_DIR / "subjs_to_sim.csv")
 print("petTOAD Setup done!")

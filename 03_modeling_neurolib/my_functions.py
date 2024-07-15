@@ -509,21 +509,45 @@ def getMeanPowerSpectrum(activities, dt, maxfr=70, spectrum_windowsize=1.0, norm
         powers /= np.max(powers)
     return f, powers
 
+def calculate_sw_fc(ts, T, N, window_size=30, step_size=1):
+    num_windows = (T - window_size) // step_size + 1
+    corr_ts = np.zeros((num_windows, N, N))
+    # 1.1 Calculate for each time window the pairwise correlation between the given nodes activities
+    for win in range(num_windows):
+        start = win * step_size
+        end = start + window_size
+        corr_ts[win,:,:] = np.corrcoef(ts[:, start:end])
+    return corr_ts
 
+def calculate_metaconnectivity(ts, window_size=10, step_size=1):
+    """
+    Calculates metaconnectivity as described in "White-matter degradation and dynamical compensation support age-related functional alterations in human brain" 
+    by Petkoski et al @ Cerebral Cortex, 2023, 33, 6241–6256
+    # From the Methods:
+    # In addition we calculated higher order interactions between brain regions using metaconnectivity (MC) (Arbabyazd et al. 2020). 
+    # Exactly as typical static FC analysis ignores time, the previously mentioned FCD analyses ignore space. However, FC reconfiguration may occur at different speeds for 
+    # different sets of links (Lombardo et al. 2020). Furthermore, the fluctuations of certain FC links may coincide with the fluctuation of other FC links, but at the same
+    # time be relatively independent from the fluctuation. Therefore, we compute a different dFC speed distribution for different sets of links, which constitute spatial dFC modules.
+    # MC is defined as correlation between linkwise timeseries consisting of the pairwise correlations between the given nodes at each window. Hence it represents a fourth order 
+    # statistics between nodes’ dynamics. 
 
-def plot_and_save_exploration(df):
-    plt.figure()
-    plt.plot(df["K_gl"], df["mean_fc_corr"])
-    plt.fill_between(
-        df["K_gl"],
-        (df["mean_fc_corr"] + 1.96 * df["std_fc_corr"]),
-        (df["mean_fc_corr"] - 1.96 * df["std_fc_corr"]),
-        alpha=0.1,
-    )
-    plt.ylabel("sFC-eFC correlation")
-    plt.xlabel("G")
-    plt.savefig(FIG_DIR / "initial_exploration_Gs.png")
+    Args:
+    ts (np.array): the timeseries of the subject in N x T format (regions x timepoints)
+    window_size (int): number of TR to take for windowsize (TR x window_size gives you the length of the window in seconds). Defaults to 10.
+    step_size (int): number of TR to skip between each window (TR x window_step gives how much to move the window in seconds each time). Defaults to 1 timestep.
 
+    Returns:
+    meta (np.array): the matrix of the metaconnectivity
 
-
-
+    """
+    N, T = ts.shape
+    corr_ts = calculate_sw_fc(ts, T, N, window_size=window_size, step_size=step_size)
+    # 2.1 Get the linkwise timeseries of the pairwise correlations previously found...
+    corr_timeseries = []
+    for i in range(N):
+        for j in range(i+1, N):
+            corr_timeseries.append(corr_ts[:, i, j])
+    arr_corr_timeseries = np.array(corr_timeseries)
+    # 2.2 ... and calculate the correlations
+    meta = np.corrcoef(arr_corr_timeseries)
+    return meta
