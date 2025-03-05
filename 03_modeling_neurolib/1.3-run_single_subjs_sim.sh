@@ -3,7 +3,7 @@
 #SBATCH --output=/home/leoner/Projects/petTOAD/slurm/outputs/output_%A_%a.out
 #SBATCH --error=/home/leoner/Projects/petTOAD/slurm/errors/error_%A_%a.err
 #SBATCH --time=2-12:00:00
-#SBATCH --array=14,44,50,53 ##subjs_to_sim == 87
+#SBATCH --array=1-87
 #SBATCH --nodes=1
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=36

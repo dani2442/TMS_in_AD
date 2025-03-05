@@ -1,4 +1,4 @@
-This folder contains the main code for simulation and analyses of the paper "In-vivo dynamical effects of structural white matter disconnections" by Riccardo Leone, Steven Geysen, Gustavo Deco and Xenia Kobeleva.
+This folder contains the main code for simulation and analyses of Leone R, Geysen S, Deco G, Kobeleva X; Alzheimer's Disease Neuroimaging Initiative. Beyond Focal Lesions: Dynamical Network Effects of White Matter Hyperintensities. Hum Brain Mapp. 2024 Dec 1;45(17):e70081. doi: 10.1002/hbm.70081. PMID: 39624946; PMCID: PMC11612665.
 
 ### Simulation pipeline
 The main scripts to run the simulations are (to be run in the following order):
@@ -13,15 +13,18 @@ The main scripts to run the simulations are (to be run in the following order):
 The following scripts are for analyses, plots and tables:
 
 - 2.0-analyze_empirical_data.ipynb --> creates:
-
-    - Fig. 3A (projections of wmh frequency);
-    - Fig. 3B (distribution of phfcd in wmh vs. no wmh);
+    Figures:
+    - Projections of wmh frequency;
     - Suppl. Fig. 4 (correlation between wmh and tau and amyloid)
+    Tables:
+    - Suppl. Table 1 (table of demographics)
 
 - 2.1-analyze_single_subj_simulations.ipynb --> creates: 
 
     Figures:
-    - Fig 3C-D (boxplots of model performances + correlation plots of % improvement and wmh log);
+    - Fig. 3A (distribution of WMH across the brain)
+    - Fig. 3B (histograms of phFCD distribution in WMH/no WMH)
+    - Fig. 3C-D (boxplots of model performances + correlation plots of % improvement and wmh log);
     - Fig. 4 (correlation plots of % improvement with clinical data with SDC models);
     - Suppl. Fig. 4 (comparison with random models);
     - Suppl. Fig. 5 (correlation plots of % improvement with clinical data with NDC models)
