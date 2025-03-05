@@ -22,7 +22,9 @@ The following scripts are for analyses, plots and tables:
 - 2.1-analyze_single_subj_simulations.ipynb --> creates: 
 
     Figures:
-    - Fig 3C-D (boxplots of model performances + correlation plots of % improvement and wmh log);
+    - Fig. 3A (distribution of WMH across the brain)
+    - Fig. 3B (histograms of phFCD distribution in WMH/no WMH)
+    - Fig. 3C-D (boxplots of model performances + correlation plots of % improvement and wmh log);
     - Fig. 4 (correlation plots of % improvement with clinical data with SDC models);
     - Suppl. Fig. 4 (comparison with random models);
     - Suppl. Fig. 5 (correlation plots of % improvement with clinical data with NDC models)
