@@ -1,4 +1,4 @@
-This folder contains the main code for simulation and analyses of the paper "In-vivo dynamical effects of structural white matter disconnections" by Riccardo Leone, Steven Geysen, Gustavo Deco and Xenia Kobeleva.
+This folder contains the main code for simulation and analyses of the paper Leone R, Geysen S, Deco G, Kobeleva X; Alzheimer's Disease Neuroimaging Initiative. Beyond Focal Lesions: Dynamical Network Effects of White Matter Hyperintensities. Hum Brain Mapp. 2024 Dec 1;45(17):e70081. doi: 10.1002/hbm.70081. PMID: 39624946; PMCID: PMC11612665.
 
 ### Simulation pipeline
 The main scripts to run the simulations are (to be run in the following order):
