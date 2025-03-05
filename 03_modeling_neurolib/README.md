@@ -14,26 +14,18 @@ The following scripts are for analyses, plots and tables:
 
 - 2.0-analyze_empirical_data.ipynb --> creates:
     Figures:
-    - Projections of wmh frequency;
-    - Suppl. Fig. 4 (correlation between wmh and tau and amyloid)
-    Tables:
-    - Suppl. Table 1 (table of demographics)
+    - Fig. 3A (distribution of WMH across the brain)
+    - Fig. 3B (histograms of phFCD distribution in WMH/no WMH)
 
 - 2.1-analyze_single_subj_simulations.ipynb --> creates: 
 
     Figures:
-    - Fig. 3A (distribution of WMH across the brain)
-    - Fig. 3B (histograms of phFCD distribution in WMH/no WMH)
     - Fig. 3C-D (boxplots of model performances + correlation plots of % improvement and wmh log);
     - Fig. 4 (correlation plots of % improvement with clinical data with SDC models);
-    - Suppl. Fig. 4 (comparison with random models);
-    - Suppl. Fig. 5 (correlation plots of % improvement with clinical data with NDC models)
     
     Tables:
     - Table 1 (table of model performance in all wmh and in high wmh only subjects)
     - Table 2 (correlations between improvement in model performance compared to the baseline and clinical/demographic data)
-    - Suppl. Table 3 (model performance of random vs. non random models)
-
 
 ### Helpers script
 We have several scripts helping with the simulations:
