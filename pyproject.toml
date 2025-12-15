@@ -1,0 +1,14 @@
+[project]
+name = "tms-in-ad"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "neurolib>=0.6.2",
+    "numba>=0.63.1",
+    "numpy>=2.3.5",
+    "pandas>=2.3.3",
+    "scikit-learn>=1.8.0",
+    "scipy>=1.16.3",
+]

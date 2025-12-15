@@ -5,6 +5,27 @@ The main scripts to run the simulations are (to be run in the following order):
 
 - 1.0-group_level_simulations.py --> runs the simulation at a group level to find the best G, first to run
 - 1.1-find_plot_best_G.ipynb --> finds the best G tuned to healthy controls
+
+## Fit Hopf on a single subject from a `.mat`
+
+If you have a MATLAB file like `ts_young_TR0.72.mat` containing `timeseries_all` (per-subject BOLD), you can fit a Hopf model to one subject and evaluate it with the same metrics used in this repo (FC correlation + phFCD KS).
+
+Script: `fit_hopf_single_subject_from_mat.py`
+
+Example:
+
+```bash
+python 03_modeling_neurolib/fit_hopf_single_subject_from_mat.py \
+    --mat ts_young_TR0.72.mat \
+    --subject-index 0 \
+    --tr 0.72 \
+    --sc /path/to/your_sc.csv \
+    --out results/hopf_single_subj
+```
+
+Outputs:
+- `subj-<idx>_hopf_fit_results.csv` (one row per `K_gl` value)
+- `subj-<idx>_hopf_fit_summary.json` (best `K_gl` by min phFCD KS)
 - 1.2-single_subjects_simulations.py --> starts from the previously found best G and runs the simulation at a single-subjec level for all models. The weights and biases can be set in the helper script petTOAD_parameter_setup.py (note that this script needs to be run with 1.3-run_single_subjs_sim.sh at the moment, but could easily be changed to accept a subject name)
 - 1.3-run_single_subjs_sim.sh --> launces slurm processing of the single subject simulations
 
