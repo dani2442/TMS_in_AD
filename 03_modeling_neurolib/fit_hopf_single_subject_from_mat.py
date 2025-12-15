@@ -52,7 +52,7 @@ def _load_sc_matrix(sc_path: Optional[Path]) -> np.ndarray:
     if sc_path.suffix.lower() == ".mat":
         m = scipy.io.loadmat(sc_path, squeeze_me=True, struct_as_record=False)
         # Try common names
-        for key in ("sc", "SC", "Cmat", "C"):
+        for key in ("timeseries_all", "sc", "SC", "Cmat", "C"):
             if key in m:
                 return np.asarray(m[key], dtype=float)
         raise KeyError(f"No SC variable found in {sc_path}. Tried sc/SC/Cmat/C")
@@ -73,8 +73,6 @@ def main() -> int:
     parser.add_argument("--fhi", type=float, default=0.07, help="Bandpass high frequency (Hz)")
 
     parser.add_argument("--warmup-sec", type=float, default=120.0, help="Warm-up seconds to discard")
-
-    parser.add_argument("--sc", type=Path, default=None, help="SC (Cmat) path: .csv/.tsv/.npy/.mat")
 
     parser.add_argument("--kgl-min", type=float, default=0.0)
     parser.add_argument("--kgl-max", type=float, default=3.5)
@@ -123,7 +121,7 @@ def main() -> int:
     f_diff[f_diff == 0] = np.mean(f_diff[f_diff != 0]) if np.any(f_diff != 0) else 0.05
 
     # Load SC
-    sc = _load_sc_matrix(args.sc)
+    sc = _load_sc_matrix(args.mat)
     if sc.shape[0] != n_nodes or sc.shape[1] != n_nodes:
         raise ValueError(f"SC shape {sc.shape} does not match N={n_nodes}.")
 

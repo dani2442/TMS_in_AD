@@ -236,7 +236,7 @@ Example:
 
 ```bash
 python 03_modeling_neurolib/fit_hopf_single_subject_from_mat.py \
-    --mat ts_young_TR0.72.mat \
+    --mat data/ts_young_TR0.72.mat \
     --subject-index 0 \
     --tr 0.72 \
     --sc /path/to/your_sc.csv \
