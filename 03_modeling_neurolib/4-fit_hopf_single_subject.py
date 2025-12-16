@@ -31,17 +31,6 @@ class SimSampling:
 
 
 def _load_sc_matrix(sc_path: Optional[Path]) -> np.ndarray:
-    if sc_path is None:
-        # Try petTOAD's AAL SC loader (requires repo data layout).
-        try:
-            from petTOAD_load import load_norm_aal_sc
-
-            return np.asarray(load_norm_aal_sc(), dtype=float)
-        except Exception as e:  # noqa: BLE001
-            raise RuntimeError(
-                "Could not load SC automatically. Provide --sc (CSV/NPY/MAT)."
-            ) from e
-
     if sc_path.suffix.lower() == ".npy":
         return np.load(sc_path)
 
@@ -52,7 +41,7 @@ def _load_sc_matrix(sc_path: Optional[Path]) -> np.ndarray:
     if sc_path.suffix.lower() == ".mat":
         m = scipy.io.loadmat(sc_path, squeeze_me=True, struct_as_record=False)
         # Try common names
-        for key in ("timeseries_all", "sc", "SC", "Cmat", "C"):
+        for key in ("FC_mean", "FC_all", "sc", "SC", "Cmat", "C"):
             if key in m:
                 return np.asarray(m[key], dtype=float)
         raise KeyError(f"No SC variable found in {sc_path}. Tried sc/SC/Cmat/C")
@@ -126,7 +115,7 @@ def main() -> int:
         raise ValueError(f"SC shape {sc.shape} does not match N={n_nodes}.")
 
     # Neurolib imports
-    from neurolib.models.pheno_hopf import PhenoHopfModel
+    from neurolib.models.hopf import HopfModel
     from neurolib.optimize.exploration import BoxSearch
     from neurolib.utils import paths
     from neurolib.utils import pypetUtils as pu
@@ -140,7 +129,7 @@ def main() -> int:
 
     # Prepare Hopf model
     Dmat = np.zeros_like(sc)
-    model = PhenoHopfModel(Cmat=sc, Dmat=Dmat)
+    model = HopfModel(Cmat=sc, Dmat=Dmat)
     model.params["Dmat"] = None
     model.params["duration"] = duration_ms
     model.params["signalV"] = 0

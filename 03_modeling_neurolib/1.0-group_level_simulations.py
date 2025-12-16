@@ -15,7 +15,7 @@ Sources:
 
 # %%
 # %% Initial imports
-from neurolib.models.pheno_hopf import PhenoHopfModel
+from neurolib.models.hopf import HopfModel
 from neurolib.optimize.exploration import BoxSearch
 from neurolib.utils import paths
 from neurolib.utils import pypetUtils as pu
